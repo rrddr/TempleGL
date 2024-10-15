@@ -7,9 +7,8 @@
 #include <iostream>
 
 /// Global Variables
-// window size
-int windowHeight = 1080;
-int windowWidth = 1920;
+int window_height = 1080;
+int window_width = 1920;
 
 int main() {
   /// Initialize GLFW
@@ -22,7 +21,7 @@ int main() {
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
 
-  GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "TempleGL", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(window_width, window_height, "TempleGL", nullptr, nullptr);
   if (window == nullptr) {
     std::cout << "Failed to create GLFW window" << std::endl;
     glfwTerminate();

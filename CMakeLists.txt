@@ -10,6 +10,10 @@ endif()
 add_executable(TempleGL src/main.cpp
         src/helper.h
         src/helper.cpp
+        src/shader.h
+        src/shader.cpp
+        src/mesh.h
+        src/mesh.cpp
 )
 
 find_package(glfw3 CONFIG REQUIRED)
