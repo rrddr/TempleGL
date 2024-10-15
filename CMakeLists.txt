@@ -3,7 +3,14 @@ project(TempleGL)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(TempleGL src/main.cpp)
+if (NOT CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-DNDEBUG)
+endif()
+
+add_executable(TempleGL src/main.cpp
+        src/helper.h
+        src/helper.cpp
+)
 
 find_package(glfw3 CONFIG REQUIRED)
 message("Linking libraries: glfw ")
