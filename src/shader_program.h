@@ -1,5 +1,5 @@
-#ifndef TEMPLEGL_SRC_SHADER_H_
-#define TEMPLEGL_SRC_SHADER_H_
+#ifndef TEMPLEGL_SRC_SHADER_PROGRAM_H_
+#define TEMPLEGL_SRC_SHADER_PROGRAM_H_
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -109,4 +109,4 @@ class ShaderProgram {
    */
   static void checkCompileOrLinkErrors(GLuint program_or_shader, GLenum program_or_shader_type) ;
 };
-#endif //TEMPLEGL_SRC_SHADER_H_
+#endif //TEMPLEGL_SRC_SHADER_PROGRAM_H_

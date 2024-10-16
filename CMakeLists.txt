@@ -10,8 +10,8 @@ endif()
 add_executable(TempleGL src/main.cpp
         src/helper.h
         src/helper.cpp
-        src/shader.h
-        src/shader.cpp
+        src/shader_program.h
+        src/shader_program.cpp
         src/mesh.h
         src/mesh.cpp
 )
