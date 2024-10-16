@@ -1,10 +1,6 @@
 #include "helper.h"
 #include <iostream>
 
-/**
- * This is a callback function for parsing OpenGL Debug Messages, and sending the information to stdout.
- * It should be registered using {glDebugMessageCallback}.
- */
 void APIENTRY debugMessageCallback(GLenum source, GLenum type, unsigned int id, GLenum severity,
                                    GLsizei length, const char* message, const void* user_param) {
   std::cout << "---------------" << std::endl;

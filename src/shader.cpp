@@ -42,7 +42,7 @@ std::string ShaderProgram::Stages::loadShaderSource(const std::string& shader_pa
   }
   catch (std::ifstream::failure& e) {
     glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1,
-                         std::format("ERROR::SHADER: Failed to read file from path '{}'", shader_path).c_str());
+                         std::format("ERROR::SHADER_LOAD: Failed to read file from path '{}'", shader_path).c_str());
   }
 }
 
@@ -95,13 +95,13 @@ void ShaderProgram::checkCompileOrLinkErrors(GLuint program_or_shader, GLenum pr
     glGetProgramiv(program_or_shader, GL_LINK_STATUS, &success);
     if (!success) {
       glGetProgramInfoLog(program_or_shader, log_length, nullptr, info_log);
-      std::cout << "ERROR::PROGRAM_LINKING_ERROR: " << program_or_shader_type << "\n" << info_log << std::endl;
+      std::cout << "ERROR::SHADER_PROGRAM_LINKING: " << program_or_shader_type << "\n" << info_log << std::endl;
     }
   } else {
     glGetShaderiv(program_or_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
       glGetShaderInfoLog(program_or_shader, log_length, nullptr, info_log);
-      std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << program_or_shader_type << "\n" << info_log
+      std::cout << "ERROR::SHADER_COMPILATION: " << program_or_shader_type << "\n" << info_log
                 << std::endl;
     }
   }

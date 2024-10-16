@@ -35,7 +35,7 @@ int main() {
 
   glfwSetWindowPos(window, 50, 50); // TODO: Make portable?
 
-  /// Initialize GLAD (which loads OpenGl function pointers for us)
+  /// Initialize GLAD (which loads OpenGL function pointers for us)
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
     std::cout << "Failed to initialize GLAD" << std::endl;
     glfwTerminate();
