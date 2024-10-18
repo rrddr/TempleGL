@@ -14,7 +14,7 @@ class ShaderProgram {
   /**
    * Stores GLSL source code for each shader stage used in this program.
    */
-  struct Stages {
+  class Stages {
    public:
     std::string vertex_shader_source;
     std::string tessellation_control_shader_source;

@@ -12,8 +12,8 @@ add_executable(TempleGL src/main.cpp
         src/helper.cpp
         src/shader_program.h
         src/shader_program.cpp
-        src/mesh.h
-        src/mesh.cpp
+        src/model.h
+        src/model.cpp
 )
 
 find_package(glfw3 CONFIG REQUIRED)
