@@ -101,8 +101,7 @@ void ShaderProgram::checkCompileOrLinkErrors(GLuint program_or_shader, GLenum pr
     glGetShaderiv(program_or_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
       glGetShaderInfoLog(program_or_shader, log_length, nullptr, info_log);
-      std::cout << "ERROR::SHADER_COMPILATION: " << program_or_shader_type << "\n" << info_log
-                << std::endl;
+      std::cout << "ERROR::SHADER_COMPILATION: " << program_or_shader_type << "\n" << info_log << std::endl;
     }
   }
 }
