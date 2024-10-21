@@ -12,10 +12,14 @@ add_executable(TempleGL src/main.cpp
         src/helper.cpp
         src/camera.h
         src/camera.cpp
+        src/screen.h
+        src/screen.cpp
         src/shader_program.h
         src/shader_program.cpp
         src/model.h
         src/model.cpp
+        src/screen.cpp
+        src/screen.h
 )
 
 find_package(glfw3 CONFIG REQUIRED)

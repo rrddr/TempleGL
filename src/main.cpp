@@ -3,41 +3,26 @@
 #include <glm/glm.hpp>
 
 #include "helper.h"
+#include "camera.h"
+#include "screen.h"
 
 #include <iostream>
-
-/// Global Variables
-int window_height = 1080;
-int window_width = 1920;
+#include <memory>
 
 int main() {
-  /// Initialize GLFW
-  glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  /// Initialize GLFW / GLAD
+  bool debug_mode = false;
 #ifndef NDEBUG
   std::cout << "Running in Debug Mode" << std::endl;
-  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+  debug_mode = true;
 #endif
-
-  GLFWwindow* window = glfwCreateWindow(window_width, window_height, "TempleGL", nullptr, nullptr);
-  if (window == nullptr) {
-    std::cout << "Failed to create GLFW window" << std::endl;
-    glfwTerminate();
-    return -1;
+  Camera camera(glm::vec3(0.0f, 10.0f, 0.0f));
+  std::unique_ptr<Screen> screen;
+  try {
+    screen = std::make_unique<Screen>(1080, 1920, "TempleGL", camera, debug_mode);
   }
-  glfwMakeContextCurrent(window);
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-//  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-//  glfwSetCursorPosCallback(window, mouse_callback);
-//  glfwSetScrollCallback(window, scroll_callback);
-
-  glfwSetWindowPos(window, 50, 50); // TODO: Make portable?
-
-  /// Initialize GLAD (which loads OpenGL function pointers for us)
-  if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-    std::cout << "Failed to initialize GLAD" << std::endl;
+  catch (std::runtime_error& error) {
+    std::cout << "FATAL ERROR: " << error.what() << std::endl;
     glfwTerminate();
     return -1;
   }
