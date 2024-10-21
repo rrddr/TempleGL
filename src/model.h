@@ -4,6 +4,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <glm/glm.hpp>
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #include <vector>

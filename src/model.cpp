@@ -39,7 +39,11 @@ void Model::loadVertexData(aiMesh** meshes, unsigned int num_meshes) {
   unsigned int first_index = 0;
   for (unsigned int i = 0; i < num_meshes; ++i) {
     aiMesh* mesh = meshes[i];
+
+    /// Store meta-information about this mesh directly in the draw command
     draw_commands.emplace_back(3, 1, first_index, base_vertex, mesh->mMaterialIndex);
+
+    /// Append vertex data
     for (unsigned int j = 0; j < mesh->mNumVertices; ++j) {
       vertex.position[0] = mesh->mVertices[j].x;
       vertex.position[1] = mesh->mVertices[j].y;
@@ -55,6 +59,8 @@ void Model::loadVertexData(aiMesh** meshes, unsigned int num_meshes) {
       vertices.push_back(vertex);
       ++base_vertex;
     }
+
+    /// Append index data
     for (unsigned int j = 0; j < mesh->mNumFaces; ++j) {
       aiFace face = mesh->mFaces[j];
       if (face.mNumIndices < 3) { continue; } // ignore this edge case, we should only have triangle faces anyway
