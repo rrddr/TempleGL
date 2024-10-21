@@ -41,8 +41,10 @@ std::string ShaderProgram::Stages::loadShaderSource(const std::string& shader_pa
     return shader_source;
   }
   catch (std::ifstream::failure& e) {
-    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1,
-                         std::format("ERROR::SHADER_LOAD: Failed to read file from path '{}'", shader_path).c_str());
+    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
+                         std::format("Shader source load error: Failed to read file from path '{}'",
+                                     shader_path).c_str());
+    return "";
   }
 }
 
@@ -95,13 +97,40 @@ void ShaderProgram::checkCompileOrLinkErrors(GLuint program_or_shader, GLenum pr
     glGetProgramiv(program_or_shader, GL_LINK_STATUS, &success);
     if (!success) {
       glGetProgramInfoLog(program_or_shader, log_length, nullptr, info_log);
-      std::cout << "ERROR::SHADER_PROGRAM_LINKING: " << program_or_shader_type << "\n" << info_log << std::endl;
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
+                           std::format("Program/shader linking error(s):\n{}", info_log).c_str());
     }
   } else {
     glGetShaderiv(program_or_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
       glGetShaderInfoLog(program_or_shader, log_length, nullptr, info_log);
-      std::cout << "ERROR::SHADER_COMPILATION: " << program_or_shader_type << "\n" << info_log << std::endl;
+      std::string type;
+      switch (program_or_shader_type) {
+        case GL_VERTEX_SHADER:
+          type = "Vertex";
+          break;
+        case GL_TESS_CONTROL_SHADER:
+          type = "Tesselation Control";
+          break;
+        case GL_TESS_EVALUATION_SHADER:
+          type = "Tesselation Evaluation";
+          break;
+        case GL_GEOMETRY_SHADER:
+          type = "Geometry";
+          break;
+        case GL_FRAGMENT_SHADER:
+          type = "Fragment";
+          break;
+        case GL_COMPUTE_SHADER:
+          type = "Compute";
+          break;
+        default:
+          type = "Unknown";
+          break;
+      }
+      // Low severity, because this information is often duplicated in linking error message
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_LOW, -1,
+                           std::format("{} shader compile error:\n{}", type, info_log).c_str());
     }
   }
 }

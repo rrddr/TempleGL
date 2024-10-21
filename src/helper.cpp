@@ -4,9 +4,8 @@
 void APIENTRY debugMessageCallback(GLenum source, GLenum type, unsigned int id, GLenum severity,
                                    GLsizei length, const char* message, const void* user_param) {
   std::cout << "---------------" << std::endl;
-  std::cout << "Debug message (" << id << "): " << message << std::endl;
-
-  std::cout << "Source: ";
+  std::cout << "Debug message (" << id << ")";
+  std::cout << " | Source: ";
   switch (source) {
     case GL_DEBUG_SOURCE_API:
       std::cout << "API";
@@ -83,5 +82,5 @@ void APIENTRY debugMessageCallback(GLenum source, GLenum type, unsigned int id, 
       std::cout << "Unrecognized GLenum value " << severity;
       break;
   }
-  std::cout << std::endl << std::endl;
+  std::cout << std::endl << "Message: " << message << std::endl;
 }

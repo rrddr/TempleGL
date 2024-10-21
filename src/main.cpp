@@ -5,6 +5,7 @@
 #include "helper.h"
 #include "camera.h"
 #include "screen.h"
+#include "shader_program.h"
 
 #include <iostream>
 #include <memory>
@@ -36,7 +37,13 @@ int main() {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(debugMessageCallback, nullptr);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE); // Output all messages
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_FALSE); // Except low sev.
   }
+
+  /// Compile shaders
+  ShaderProgram basic_shader(ShaderProgram::Stages()
+                                 .vertex("../shaders/basic.vert")
+                                 .fragment("../shaders/basic.frag"));
 
   glfwTerminate();
   return 0;
