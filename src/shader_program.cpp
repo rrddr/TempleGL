@@ -1,7 +1,6 @@
 #include "shader_program.h"
 
 #include <fstream>
-#include <iostream>
 #include <format>
 #include <vector>
 

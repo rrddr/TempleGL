@@ -100,8 +100,9 @@ class ShaderProgram {
   [[nodiscard]] static GLuint compileShader(const std::string& shader_string, GLenum shader_type) ;
 
   /**
-   * Used to check for errors after compiling or linking. Outputs a message to stdout if any errors occurred.
-   * This function is redundant in Debug mode, but we want to know about these errors even when Debug mode is off.
+   * Used to check for errors after compiling or linking. Sends an OpenGL debug message event if any errors occurred.
+   * File read and linking errors are Medium severity, compile errors are Low severity (since they are often duplicated
+   * in the linking error message).
    *
    * @param program_or_shader       The id of either the shader object, or the program being inspected.
    * @param program_or_shader_type  When inspecting a shader, this should be the corresponding shader type.

@@ -23,7 +23,7 @@ add_executable(TempleGL src/main.cpp
 )
 
 find_package(glfw3 CONFIG REQUIRED)
-message("Linking libraries: glfw ")
+message("Linking libraries: glfw")
 target_link_libraries(TempleGL glfw)
 
 find_package(glad CONFIG REQUIRED)

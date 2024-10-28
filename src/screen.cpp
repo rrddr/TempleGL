@@ -51,6 +51,9 @@ Screen::Screen(int width, int height, const std::string& window_name, const Came
     throw std::runtime_error("Failed to initialize GLAD.");
   }
 
+  /// OpenGL options
+  glEnable(GL_DEPTH_TEST);
+
   /// Set remaining variables
   current_time = (float) glfwGetTime();
   // delta_time, mouse_x, mouse_y   These will be initialized on first use

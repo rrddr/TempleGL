@@ -4,8 +4,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <glm/glm.hpp>
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 #include <vector>
 #include <string>
@@ -20,16 +18,11 @@ struct DrawElementsIndirectCommand {
 };
 
 struct CustomStbiDeleter {
-  void operator()(unsigned char* data) { stbi_image_free(data); }
+  void operator()(unsigned char* data);
 };
 
 class Model {
  public:
-  std::vector<DrawElementsIndirectCommand> draw_commands;
-
-  explicit Model(const std::string& obj_path);
-
- private:
   struct Vertex {
     float position[3];
     float uv[2];
@@ -37,6 +30,11 @@ class Model {
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<std::unique_ptr<unsigned char, CustomStbiDeleter>> texture_data;
+  std::vector<DrawElementsIndirectCommand> draw_commands;
+
+  explicit Model(const std::string& obj_path);
+
+ private:
   std::string source_dir;
 
   void loadTextureData(aiMaterial** materials, unsigned int num_materials);

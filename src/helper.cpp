@@ -29,7 +29,6 @@ void APIENTRY debugMessageCallback(GLenum source, GLenum type, unsigned int id, 
       std::cout << "Unrecognized GLenum value " << source;
       break;
   }
-
   std::cout << " | Type: ";
   switch (type) {
     case GL_DEBUG_TYPE_ERROR:
@@ -63,7 +62,6 @@ void APIENTRY debugMessageCallback(GLenum source, GLenum type, unsigned int id, 
       std::cout << "Unrecognized GLenum value " << type;
       break;
   }
-
   std::cout << " | Severity: ";
   switch (severity) {
     case GL_DEBUG_SEVERITY_HIGH:
