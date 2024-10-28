@@ -34,7 +34,7 @@ void Camera::processKeyboard(CameraMoveDirection direction, float delta_time) {
 void Camera::processMouseMovement(float x_offset, float y_offset) {
   yaw += x_offset * mouse_sensitivity;
   pitch += y_offset * mouse_sensitivity;
-  pitch = glm::clamp(pitch, -HALF_PI, HALF_PI);
+  pitch = glm::clamp(pitch, -HALF_PI + 0.01f, HALF_PI - 0.01f);
   updateCameraVectors();
 }
 
