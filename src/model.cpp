@@ -53,7 +53,7 @@ void Model::loadVertexData(aiMesh** meshes, unsigned int num_meshes) {
   for (unsigned int i = 0; i < num_meshes; ++i) {
     aiMesh* mesh = meshes[i];
 
-    /// Store meta-information about this mesh directly in the draw command
+    /// Instead of storing meta-information somewhere, we use it to directly create a draw command for the mesh
     draw_commands.emplace_back(mesh->mNumFaces*3, 1, first_index, base_vertex, mesh->mMaterialIndex);
 
     /// Append vertex data
@@ -76,7 +76,7 @@ void Model::loadVertexData(aiMesh** meshes, unsigned int num_meshes) {
     /// Append index data
     for (unsigned int j = 0; j < mesh->mNumFaces; ++j) {
       aiFace face = mesh->mFaces[j];
-      if (face.mNumIndices < 3) { continue; } // ignore this edge case, we should only have triangle faces anyway
+      if (face.mNumIndices != 3) { continue; } // ignore this edge case, we should only ever have triangle faces
       indices.push_back(face.mIndices[0]);
       indices.push_back(face.mIndices[1]);
       indices.push_back(face.mIndices[2]);

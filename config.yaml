@@ -1,0 +1,9 @@
+window:
+  name: TempleGL
+  width: 1920
+  height: 1080
+  initial_x_pos: 50
+  initial_y_pos: 50
+debug:
+  enabled: true
+  level: all        # <all | low | medium | high>  Sets the minimum severity of debug messages that should be shown.
