@@ -5,7 +5,8 @@
 
 #include <iostream>
 
-void Initializer::run() {
+template <typename T>
+void Initializer<T>::run() {
   loadConfigYaml();
   init();
   renderSetup();
@@ -20,7 +21,8 @@ void Initializer::run() {
   glfwTerminate();
 }
 
-void Initializer::loadConfigYaml() {
+template <typename T>
+void Initializer<T>::loadConfigYaml() {
   YAML::Node config_yaml;
   try {
     config_yaml = YAML::LoadFile("../config.yaml");
@@ -46,7 +48,7 @@ void Initializer::loadConfigYaml() {
     else if (debug_level_str == "high") { config_.debug_level = HIGH; }
     else {
       std::cerr << "Initialization WARNING: invalid setting in config.yaml, "
-                << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'.";
+                << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'." << std::endl;
       config_.debug_level = ALL;
     }
   }
@@ -57,11 +59,14 @@ void Initializer::loadConfigYaml() {
   }
 }
 
-void Initializer::init() {
+template <typename T>
+void Initializer<T>::init() {
   /// Initialize GLFW
+  glfwSetErrorCallback(glfwErrorCallback);
   if (!glfwInit()) {
     throw std::runtime_error("Initialization ERROR: failed to initialize GLFW.");
   }
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   if (config_.debug_enabled) {
@@ -121,19 +126,27 @@ void Initializer::init() {
   }
 }
 
-void Initializer::processKeyboardInput() {
+template <typename T>
+void Initializer<T>::processKeyboardInput() {
   if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window_, true);
   }
 }
 
-void Initializer::framebufferSizeCallback(int width, int height) {
+template <typename T>
+void Initializer<T>::framebufferSizeCallback(int width, int height) {
   config_.window_width = width;
   config_.window_height = height;
   if (!lock_gl_viewport) glViewport(0, 0, width, height);
 }
 
-void APIENTRY Initializer::debugMessageCallback(GLenum source, GLenum type, unsigned int id, GLenum severity,
+template<typename T>
+void Initializer<T>::glfwErrorCallback(int error_code, const char* description) {
+  std::cerr << "GLFW ERROR (" << error_code << "): " << description << std::endl;
+}
+
+template <typename T>
+void APIENTRY Initializer<T>::debugMessageCallback(GLenum source, GLenum type, unsigned int id, GLenum severity,
                                                 GLsizei length, const char* message, const void* user_param) {
   std::cout << "---------------" << std::endl;
   std::cout << "Debug message (" << id << ")";

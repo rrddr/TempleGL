@@ -1,15 +1,60 @@
 #include "renderer.h"
 
-#include <glm/glm.hpp>
+#include <yaml-cpp/yaml.h>
+#include <yaml-cpp/exceptions.h>
+
+#include <iostream>
+#include <vector>
+
+void Renderer::loadConfigYaml() {
+  Initializer::loadConfigYaml();
+  // We accept having to load the file a second time, as this is cleaner than any alternative
+  YAML::Node config_yaml;
+  try {
+    config_yaml = YAML::LoadFile("../config.yaml");
+  }
+  catch (YAML::Exception& e) {
+    std::cerr << "Initialization ERROR: Failed to load config.yaml. yaml-cpp threw: " << std::endl
+              << typeid(e).name() << std::endl;
+    throw; // re-throw to main
+  }
+  try {
+    YAML::Node camera_values = config_yaml["camera"]["initial_values"];
+    auto init_pos_vector = camera_values["position"].as<std::vector<float>>();
+    if (init_pos_vector.size() != 3) {
+      std::cerr << "Initialization WARNING: invalid setting in config.yaml, "
+                << "camera.initial_values.position must be an array of exactly 3 floats."
+                << "Defaulting to initial position [0.0, 0.0, 0.0]." << std::endl;
+      config_.initial_camera_pos = glm::vec3(0.0f);
+    } else {
+      config_.initial_camera_pos = glm::vec3(init_pos_vector[0], init_pos_vector[1], init_pos_vector[2]);
+    }
+    config_.initial_camera_yaw = glm::radians(camera_values["yaw"].as<float>());
+    config_.initial_camera_pitch = glm::radians(camera_values["pitch"].as<float>());
+    config_.initial_camera_speed = camera_values["speed"].as<float>();
+    config_.max_camera_speed = config_yaml["camera"]["limits"]["max_speed"].as<float>();
+
+    config_.model_path = config_yaml["model"]["source_path"].as<std::string>();
+    config_.shader_path = config_yaml["shader"]["source_path"].as<std::string>();
+  }
+  catch (YAML::Exception& e) {
+    std::cerr << "Initialization ERROR: Failed to parse config.yaml. yaml-cpp threw:" << std::endl
+              << typeid(e).name() << std::endl;
+    throw; // re-throw to main
+  }
+}
 
 void Renderer::renderSetup() {
   state_.first_time_receiving_mouse_input = true;
   state_.current_time = static_cast<float>(glfwGetTime());
-  camera_ = std::make_unique<Camera>(Camera(glm::vec3(0.0f, 0.1f, 0.0f)));
-  temple_model_ = std::make_unique<Model>("../model/minecraft.obj");
+  camera_ = std::make_unique<Camera>(config_.initial_camera_pos,
+                                     config_.initial_camera_yaw,
+                                     config_.initial_camera_pitch,
+                                     config_.initial_camera_speed);
+  temple_model_ = std::make_unique<Model>(config_.model_path + "minecraft.obj");
   basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                      .vertex("../shaders/basic.vert")
-                                                      .fragment("../shaders/basic.frag"));
+                                                      .vertex(config_.shader_path + "basic.vert")
+                                                      .fragment(config_.shader_path + "basic.frag"));
 
   glEnable(GL_DEPTH_TEST);
 
@@ -18,7 +63,7 @@ void Renderer::renderSetup() {
   glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array);
   int texture_count = (int) temple_model_->texture_data.size();
   glTextureStorage3D(texture_array, 1, GL_RGB8, 128, 128, texture_count);
-  for (int index = 0 ; index < texture_count ; ++index) {
+  for (int index = 0; index < texture_count; ++index) {
     glTextureSubImage3D(texture_array, 0, 0, 0, index, 128, 128, 1, GL_RGB, GL_UNSIGNED_BYTE,
                         (const void*) temple_model_->texture_data[index].get());
   }
@@ -42,7 +87,7 @@ void Renderer::renderSetup() {
   GLuint indices_buffer;
   glCreateBuffers(1, &indices_buffer);
   glNamedBufferStorage(indices_buffer,
-                       sizeof (unsigned int) * temple_model_->indices.size(),
+                       sizeof(unsigned int) * temple_model_->indices.size(),
                        (const void*) temple_model_->indices.data(),
                        GL_DYNAMIC_STORAGE_BIT);
 

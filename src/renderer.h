@@ -2,16 +2,30 @@
 #define TEMPLEGL_SRC_RENDERER_H_
 
 #include "initializer.h"
+#include "initializer.cpp"
 #include "camera.h"
 #include "model.h"
 #include "shader_program.h"
 
+#include <glm/glm.hpp>
+
+#include <string>
 #include <memory>
+
+struct RendererConfig : MinimalConfig {
+  glm::vec3 initial_camera_pos;
+  float initial_camera_yaw;
+  float initial_camera_pitch;
+  float initial_camera_speed;
+  float max_camera_speed;
+  std::string model_path;
+  std::string shader_path;
+};
 
 /**
  * Implements the non-boilerplate methods declared by the abstract Initializer class.
  */
-class Renderer : public Initializer {
+class Renderer : public Initializer<RendererConfig> {
  private:
   struct State {
     bool first_time_receiving_mouse_input;
@@ -26,6 +40,7 @@ class Renderer : public Initializer {
   std::unique_ptr<ShaderProgram> basic_shader_;
 
   /// Program stages
+  void loadConfigYaml() override;
   void renderSetup() override;
   void updateRenderState() override;
   void processKeyboardInput() override;
@@ -44,7 +59,7 @@ class Renderer : public Initializer {
    * @param near_plane  Distance of near plane from camera.
    * @param far_plane   Distance of far plane from camera.
    */
-  inline glm::mat4 getProjectionMatrix(float fov = HALF_PI, float near_plane = 0.1f, float far_plane = 100.0f) const {
+  inline glm::mat4 getProjectionMatrix(float fov = 1.5f, float near_plane = 0.1f, float far_plane = 100.0f) const {
     return glm::perspective(fov, (float) config_.window_width / (float) config_.window_height, near_plane, far_plane);
   }
 };

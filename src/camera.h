@@ -4,13 +4,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-const float HALF_PI = 1.57079632679f;
-namespace { //default values
-  const float YAW = -HALF_PI;
-  const float PITCH = 0.0f;
-  const float SPEED = 15.0f;
-  const float SENSITIVITY = 0.01f;
-}
 
 enum CameraMoveDirection { FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN };
 
@@ -20,14 +13,10 @@ enum CameraMoveDirection { FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN };
  */
 class Camera {
  public:
-  /**
-   * Simple constructor.
-   *
-   * @param position    Optional initial position in world space. Default value is origin.
-   * @param yaw         Optional initial yaw in radians. Default value is PI/2.
-   * @param pitch       Optional initial pitch in radians. Default value is 0.
-   */
-  explicit Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), float yaw = YAW, float pitch = PITCH);
+  explicit Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
+                  float yaw = 0.0f,
+                  float pitch = 0.0f,
+                  float speed = 1.0f);
 
   /**
    * Computes transform matrix from world space to view space.
@@ -62,7 +51,7 @@ class Camera {
 
  private:
   glm::vec3 position, front, up, right, world_up;
-  float yaw, pitch, movement_speed, mouse_sensitivity;
+  float yaw, pitch, movement_speed, max_speed;
 
   void updateCameraVectors();
 };

@@ -6,4 +6,16 @@ window:
   initial_y_pos: 50
 debug:
   enabled: true
-  level: all        # <all | low | medium | high>  Sets the minimum severity of debug messages that should be shown.
+  level: all    # <all | low | medium | high>  Minimum severity of debug messages that should be shown.
+camera:
+  initial_values:
+    position: [-20.0, 20.0, 0.0]
+    yaw: 0.0    # degrees
+    pitch: 0.0  # degrees
+    speed: 10.0 # units/s
+  limits:
+    max_speed: 30.0
+model:
+  source_path: ../model/    # global, or relative to executable
+shader:
+  source_path: ../shaders/  # global, or relative to executable
