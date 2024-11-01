@@ -37,7 +37,7 @@ class Initializer {
   virtual void init() final;
   virtual void renderSetup() {}
   virtual void updateRenderState() {}
-  virtual void processKeyboardInput();
+  virtual void processKeyboardInput();  // Default implementation terminates program on ESC press
   virtual void render() {}
   virtual void renderTerminate() {}
 

@@ -106,6 +106,7 @@ void Renderer::render() {
 }
 void Renderer::renderTerminate() {
 }
+
 void Renderer::cursorPosCallback(float x_pos, float y_pos) {
   // This prevents a large camera jump on start
   if (state_.first_time_receiving_mouse_input) {

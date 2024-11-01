@@ -9,8 +9,8 @@ int main() {
     renderer.run();
   }
   catch (std::runtime_error& e) {
-    std::cerr << "FATAL ERROR" << std::endl << e.what() << std::endl;
-    glfwTerminate(); // Should be unnecessary, but doesn't hurt to be safe
+    std::cerr << std::endl << "FATAL ERROR" << std::endl << e.what() << std::endl;
+    glfwTerminate();
     return -1;
   }
   return 0;

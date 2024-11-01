@@ -25,41 +25,43 @@ void Initializer::loadConfigYaml() {
   try {
     config_yaml = YAML::LoadFile("../config.yaml");
   }
-  catch (YAML::ParserException& exception) {
-    std::cerr << "Initialization ERROR: config.yaml is malformed." << std::endl << exception.what() << std::endl;
-    throw std::runtime_error(""); // exit to main() and return -1
+  catch (YAML::Exception& e) {
+    std::cerr << "Initialization ERROR: Failed to load config.yaml. yaml-cpp threw: " << std::endl
+              << typeid(e).name() << std::endl;
+    throw; // re-throw to main
   }
-  catch (YAML::BadFile& exception) {
-    std::cerr << "Initialization ERROR: failed to load config.yaml." << std::endl << exception.what() << std::endl;
-    throw std::runtime_error(""); // exit to main() and return -1
+  try {
+    YAML::Node window = config_yaml["window"];
+    config_.window_name = window["name"].as<std::string>();
+    config_.window_width = window["width"].as<int>();
+    config_.window_height = window["height"].as<int>();
+    config_.window_initial_x_pos = window["initial_x_pos"].as<int>();
+    config_.window_initial_y_pos = window["initial_y_pos"].as<int>();
+    YAML::Node debug = config_yaml["debug"];
+    config_.debug_enabled = debug["enabled"].as<bool>();
+    auto debug_level_str = debug["level"].as<std::string>();
+    if (debug_level_str == "all") { config_.debug_level = ALL; }
+    else if (debug_level_str == "low") { config_.debug_level = LOW; }
+    else if (debug_level_str == "medium") { config_.debug_level = MEDIUM; }
+    else if (debug_level_str == "high") { config_.debug_level = HIGH; }
+    else {
+      std::cerr << "Initialization WARNING: invalid setting in config.yaml, "
+                << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'.";
+      config_.debug_level = ALL;
+    }
   }
-  YAML::Node window = config_yaml["window"];
-  config_.window_name = window["name"].as<std::string>();
-  config_.window_width = window["width"].as<int>();
-  config_.window_height = window["height"].as<int>();
-  config_.window_initial_x_pos = window["initial_x_pos"].as<int>();
-  config_.window_initial_y_pos = window["initial_y_pos"].as<int>();
-  YAML::Node debug = config_yaml["debug"];
-  config_.debug_enabled = debug["enabled"].as<bool>();
-  auto debug_level_str = debug["level"].as<std::string>();
-  if (debug_level_str == "all") { config_.debug_level = ALL; }
-  else if (debug_level_str == "low") { config_.debug_level = LOW; }
-  else if (debug_level_str == "medium") { config_.debug_level = MEDIUM; }
-  else if (debug_level_str == "high") { config_.debug_level = HIGH; }
-  else {
-    std::cerr << "Initialization WARNING: invalid setting in config.yaml, "
-              << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'.";
-    config_.debug_level = ALL;
+  catch (YAML::Exception& e) {
+    std::cerr << "Initialization ERROR: Failed to parse config.yaml. yaml-cpp threw:" << std::endl
+              << typeid(e).name() << std::endl;
+    throw; // re-throw to main
   }
 }
 
 void Initializer::init() {
   /// Initialize GLFW
   if (!glfwInit()) {
-    std::cerr << "Initialization ERROR: failed to initialize GLFW." << std::endl;
-    throw std::runtime_error(""); // exit to main() and return -1
+    throw std::runtime_error("Initialization ERROR: failed to initialize GLFW.");
   }
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   if (config_.debug_enabled) {
@@ -70,9 +72,7 @@ void Initializer::init() {
   window_ =
       glfwCreateWindow(config_.window_width, config_.window_height, config_.window_name.c_str(), nullptr, nullptr);
   if (!window_) {
-    std::cerr << "Initialization ERROR: Failed to create GLFW window object." << std::endl;
-    glfwTerminate();
-    throw std::runtime_error(""); // exit to main() and return -1
+    throw std::runtime_error("Initialization ERROR: Failed to create GLFW window object.");
   }
   glfwMakeContextCurrent(window_);
   glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -97,9 +97,7 @@ void Initializer::init() {
 
   /// Initialize GLAD
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-    std::cerr << "Initialization ERROR: Failed to initialize GLAD." << std::endl;
-    glfwTerminate();
-    throw std::runtime_error(""); // exit to main() and return -1
+    throw std::runtime_error("Initialization ERROR: Failed to initialize GLAD.");
   }
 
   /// Configure OpenGL debug output
@@ -112,7 +110,7 @@ void Initializer::init() {
     glDebugMessageCallback(debugMessageCallback, nullptr);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
     if (config_.debug_level >= DebugLevel::LOW) {
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
+      glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
     }
     if (config_.debug_level >= DebugLevel::MEDIUM) {
       glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, GL_FALSE);
@@ -124,8 +122,9 @@ void Initializer::init() {
 }
 
 void Initializer::processKeyboardInput() {
-  if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+  if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window_, true);
+  }
 }
 
 void Initializer::framebufferSizeCallback(int width, int height) {
