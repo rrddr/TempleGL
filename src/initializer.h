@@ -7,12 +7,7 @@
 #include <string>
 
 namespace {
-  enum DebugLevel {
-    ALL,
-    LOW,
-    MEDIUM,
-    HIGH
-  };
+  enum DebugLevel { ALL, LOW, MEDIUM, HIGH };
 }
 
 /**
@@ -34,8 +29,8 @@ class Initializer {
     DebugLevel debug_level;
   };
   Config config_{};
-  GLFWwindow* window_{};            // raw pointer, as destruction is handled by glfwTerminate()
-  bool lock_gl_viewport{false};  // prevent unwanted calls to glViewport while rendering to a non-default framebuffer
+  GLFWwindow* window_{};        // raw pointer, as destruction is handled by glfwTerminate()
+  bool lock_gl_viewport{false}; // prevent unwanted calls to glViewport while rendering to a non-default framebuffer
 
   /// Program stages
   virtual void loadConfigYaml() final;

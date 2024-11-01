@@ -97,8 +97,9 @@ void Initializer::init() {
 
   /// Initialize GLAD
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+    std::cerr << "Initialization ERROR: Failed to initialize GLAD." << std::endl;
     glfwTerminate();
-    throw std::runtime_error("Failed to initialize GLAD.");
+    throw std::runtime_error(""); // exit to main() and return -1
   }
 
   /// Configure OpenGL debug output

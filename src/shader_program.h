@@ -23,7 +23,7 @@ class ShaderProgram {
     std::string fragment_shader_source;
     std::string compute_shader_source;
 
-    // Utility methods to load source from file. Can (and should) be chained
+    // Utility methods to load source from file. Return self-reference so that they can be chained
     Stages& vertex(const std::string& shader_path);
     Stages& tessellationControl(const std::string& shader_path);
     Stages& tessellationEvaluation(const std::string& shader_path);

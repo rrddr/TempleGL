@@ -3,19 +3,15 @@
 #include <glm/glm.hpp>
 
 void Renderer::renderSetup() {
-  /// Set necessary initial state
   state_.first_time_receiving_mouse_input = true;
   state_.current_time = static_cast<float>(glfwGetTime());
-
-  /// OpenGL configuration
-  glEnable(GL_DEPTH_TEST);
-
-  /// Create camera object, load model, compile shaders
   camera_ = std::make_unique<Camera>(Camera(glm::vec3(0.0f, 0.1f, 0.0f)));
   temple_model_ = std::make_unique<Model>("../model/minecraft.obj");
   basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                       .vertex("../shaders/basic.vert")
                                                       .fragment("../shaders/basic.frag"));
+
+  glEnable(GL_DEPTH_TEST);
 
   /// Prepare texture array
   GLuint texture_array;
