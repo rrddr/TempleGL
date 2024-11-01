@@ -2,7 +2,7 @@
 #define TEMPLEGL_SRC_RENDERER_H_
 
 #include "initializer.h"
-#include "initializer.cpp"
+#include "initializer.cpp" // Implementations of template methods must be visible at compile time
 #include "camera.h"
 #include "model.h"
 #include "shader_program.h"
@@ -12,15 +12,17 @@
 #include <string>
 #include <memory>
 
-struct RendererConfig : MinimalConfig {
-  glm::vec3 initial_camera_pos;
-  float initial_camera_yaw;
-  float initial_camera_pitch;
-  float initial_camera_speed;
-  float max_camera_speed;
-  std::string model_path;
-  std::string shader_path;
-};
+namespace {
+  struct RendererConfig : MinimalConfig {
+    glm::vec3 initial_camera_pos;
+    float initial_camera_yaw;
+    float initial_camera_pitch;
+    float initial_camera_speed;
+    float max_camera_speed;
+    std::string model_path;
+    std::string shader_path;
+  };
+}
 
 /**
  * Implements the non-boilerplate methods declared by the abstract Initializer class.

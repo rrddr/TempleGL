@@ -6,16 +6,18 @@
 
 #include <string>
 
-enum DebugLevel { ALL, LOW, MEDIUM, HIGH };
-struct MinimalConfig {
-  std::string window_name;
-  int window_width;
-  int window_height;
-  int window_initial_x_pos;
-  int window_initial_y_pos;
-  bool debug_enabled;
-  DebugLevel debug_level;
-};
+namespace {
+  enum DebugLevel { ALL, LOW, MEDIUM, HIGH };
+  struct MinimalConfig {
+    std::string window_name;
+    int window_width;
+    int window_height;
+    int window_initial_x_pos;
+    int window_initial_y_pos;
+    bool debug_enabled;
+    DebugLevel debug_level;
+  };
+}
 
 /**
  * Defines the abstract structure of the program. This class implements only boilerplate, and provides dummy methods
