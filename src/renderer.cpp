@@ -64,10 +64,10 @@ void Renderer::renderSetup() {
                                      aspect_ratio,
                                      config_.camera_near_plane,
                                      config_.camera_far_plane);
-  temple_model_ = std::make_unique<Model>(config_.model_path + "minecraft.obj");
+  temple_model_ = std::make_unique<Model>(config_.model_path + "/minecraft.obj");
   basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                      .vertex(config_.shader_path + "basic.vert")
-                                                      .fragment(config_.shader_path + "basic.frag"));
+                                                      .vertex(config_.shader_path + "/basic.vert")
+                                                      .fragment(config_.shader_path + "/basic.frag"));
 
   glEnable(GL_DEPTH_TEST);
 

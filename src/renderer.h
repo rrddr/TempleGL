@@ -12,25 +12,23 @@
 #include <string>
 #include <memory>
 
-namespace {
-  struct RendererConfig : MinimalConfig {
-    glm::vec3 initial_camera_pos;
-    float initial_camera_yaw;
-    float initial_camera_pitch;
-    float initial_camera_speed;
-    float max_camera_speed;
-    float camera_fov;
-    float camera_near_plane;
-    float camera_far_plane;
-    std::string model_path;
-    std::string shader_path;
-  };
-}
+struct RendererConfig : MinimalInitializerConfig {
+  glm::vec3 initial_camera_pos;
+  float initial_camera_yaw;
+  float initial_camera_pitch;
+  float initial_camera_speed;
+  float max_camera_speed;
+  float camera_fov;
+  float camera_near_plane;
+  float camera_far_plane;
+  std::string model_path;
+  std::string shader_path;
+};
 
 /**
  * Implements the non-boilerplate methods declared by the abstract Initializer class.
  */
-class Renderer : public Initializer<RendererConfig> {
+ class Renderer : public Initializer<RendererConfig> {
  private:
   struct State {
     bool first_time_receiving_mouse_input;
