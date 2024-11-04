@@ -16,7 +16,8 @@ class Camera {
   explicit Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
                   float yaw = 0.0f,
                   float pitch = 0.0f,
-                  float speed = 1.0f);
+                  float speed = 1.0f,
+                  float max_speed = 30.0f);
 
   /**
    * Computes transform matrix from world space to view space.
@@ -42,7 +43,7 @@ class Camera {
   void processMouseMovement(float x_offset, float y_offset);
 
   /**
-   * Changes the internal movement_speed parameter based on scroll wheel input.
+   * Changes the internal move_speed parameter based on scroll wheel input.
    *
    * @param offset  Amount that the wheel was scrolled during the time interval indicated by delta_time argument.
    * @param delta_time  Time interval during which change occurs. In practice: time it took to render this frame.
@@ -51,7 +52,7 @@ class Camera {
 
  private:
   glm::vec3 position, front, up, right, world_up;
-  float yaw, pitch, movement_speed, max_speed;
+  float yaw, pitch, move_speed, max_move_speed;
 
   void updateCameraVectors();
 };

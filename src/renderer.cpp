@@ -50,7 +50,8 @@ void Renderer::renderSetup() {
   camera_ = std::make_unique<Camera>(config_.initial_camera_pos,
                                      config_.initial_camera_yaw,
                                      config_.initial_camera_pitch,
-                                     config_.initial_camera_speed);
+                                     config_.initial_camera_speed,
+                                     config_.max_camera_speed);
   temple_model_ = std::make_unique<Model>(config_.model_path + "minecraft.obj");
   basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                       .vertex(config_.shader_path + "basic.vert")
