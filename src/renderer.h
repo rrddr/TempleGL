@@ -19,6 +19,9 @@ namespace {
     float initial_camera_pitch;
     float initial_camera_speed;
     float max_camera_speed;
+    float camera_fov;
+    float camera_near_plane;
+    float camera_far_plane;
     std::string model_path;
     std::string shader_path;
   };
@@ -50,20 +53,9 @@ class Renderer : public Initializer<RendererConfig> {
   void renderTerminate() override;
 
   /// Callbacks
+  void framebufferSizeCallback(int width, int height) override;
   void cursorPosCallback(float x_pos, float y_pos) override;
   void scrollCallback(float y_offset) override;
-
-  /// Helper methods
-  /**
-   * Computes transform matrix from view space to clip space.
-   *
-   * @param fov         Vertical field of view in radians (angle between top and bottom planes of view frustrum).
-   * @param near_plane  Distance of near plane from camera.
-   * @param far_plane   Distance of far plane from camera.
-   */
-  inline glm::mat4 getProjectionMatrix(float fov = 1.5f, float near_plane = 0.1f, float far_plane = 100.0f) const {
-    return glm::perspective(fov, (float) config_.window_width / (float) config_.window_height, near_plane, far_plane);
-  }
 };
 
 #endif //TEMPLEGL_SRC_RENDERER_H_

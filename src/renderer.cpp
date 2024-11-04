@@ -23,8 +23,8 @@ void Renderer::loadConfigYaml() {
     auto init_pos_vector = camera_values["position"].as<std::vector<float>>();
     if (init_pos_vector.size() != 3) {
       std::cerr << "Initialization WARNING: invalid setting in config.yaml, "
-                << "camera.initial_values.position must be an array of exactly 3 floats."
-                << "Defaulting to initial position [0.0, 0.0, 0.0]." << std::endl;
+                << "camera.initial_values.position_ must be an array of exactly 3 floats."
+                << "Defaulting to initial position_ [0.0, 0.0, 0.0]." << std::endl;
       config_.initial_camera_pos = glm::vec3(0.0f);
     } else {
       config_.initial_camera_pos = glm::vec3(init_pos_vector[0], init_pos_vector[1], init_pos_vector[2]);
@@ -32,7 +32,14 @@ void Renderer::loadConfigYaml() {
     config_.initial_camera_yaw = glm::radians(camera_values["yaw"].as<float>());
     config_.initial_camera_pitch = glm::radians(camera_values["pitch"].as<float>());
     config_.initial_camera_speed = camera_values["speed"].as<float>();
-    config_.max_camera_speed = config_yaml["camera"]["limits"]["max_speed"].as<float>();
+
+    YAML::Node camera_limits = config_yaml["camera"]["limits"];
+    config_.max_camera_speed = camera_limits["max_speed"].as<float>();
+
+    YAML::Node camera_frustum = config_yaml["camera"]["view_frustum"];
+    config_.camera_fov = glm::radians(camera_frustum["fov"].as<float>());
+    config_.camera_near_plane = camera_frustum["near_plane"].as<float>();
+    config_.camera_far_plane = camera_frustum["far_plane"].as<float>();
 
     config_.model_path = config_yaml["model"]["source_path"].as<std::string>();
     config_.shader_path = config_yaml["shader"]["source_path"].as<std::string>();
@@ -47,11 +54,16 @@ void Renderer::loadConfigYaml() {
 void Renderer::renderSetup() {
   state_.first_time_receiving_mouse_input = true;
   state_.current_time = static_cast<float>(glfwGetTime());
+  auto aspect_ratio = static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height);
   camera_ = std::make_unique<Camera>(config_.initial_camera_pos,
                                      config_.initial_camera_yaw,
                                      config_.initial_camera_pitch,
                                      config_.initial_camera_speed,
-                                     config_.max_camera_speed);
+                                     config_.max_camera_speed,
+                                     config_.camera_fov,
+                                     aspect_ratio,
+                                     config_.camera_near_plane,
+                                     config_.camera_far_plane);
   temple_model_ = std::make_unique<Model>(config_.model_path + "minecraft.obj");
   basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                       .vertex(config_.shader_path + "basic.vert")
@@ -66,7 +78,7 @@ void Renderer::renderSetup() {
   glTextureStorage3D(texture_array, 1, GL_RGB8, 128, 128, texture_count);
   for (int index = 0; index < texture_count; ++index) {
     glTextureSubImage3D(texture_array, 0, 0, 0, index, 128, 128, 1, GL_RGB, GL_UNSIGNED_BYTE,
-                        (const void*) temple_model_->texture_data[index].get());
+                        temple_model_->texture_data[index].get());
   }
   glTextureParameteri(texture_array, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTextureParameteri(texture_array, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -80,31 +92,31 @@ void Renderer::renderSetup() {
   GLuint vertex_data_buffer;
   glCreateBuffers(1, &vertex_data_buffer);
   glNamedBufferStorage(vertex_data_buffer,
-                       sizeof(Model::Vertex) * temple_model_->vertices.size(),
-                       (const void*) temple_model_->vertices.data(),
+                       static_cast<GLsizeiptr>(sizeof(Model::Vertex) * temple_model_->vertices.size()),
+                       temple_model_->vertices.data(),
                        GL_DYNAMIC_STORAGE_BIT);
 
   /// Prepare EBO
   GLuint indices_buffer;
   glCreateBuffers(1, &indices_buffer);
   glNamedBufferStorage(indices_buffer,
-                       sizeof(unsigned int) * temple_model_->indices.size(),
-                       (const void*) temple_model_->indices.data(),
+                       static_cast<GLsizeiptr>(sizeof(unsigned int) * temple_model_->indices.size()),
+                       temple_model_->indices.data(),
                        GL_DYNAMIC_STORAGE_BIT);
 
   /// Prepare draw command SSBO
   GLuint draw_command_buffer;
   glCreateBuffers(1, &draw_command_buffer);
   glNamedBufferStorage(draw_command_buffer,
-                       sizeof(DrawElementsIndirectCommand) * temple_model_->draw_commands.size(),
-                       (const void*) temple_model_->draw_commands.data(),
+                       static_cast<GLsizeiptr>(sizeof(DrawElementsIndirectCommand)
+                                               * temple_model_->draw_commands.size()),
+                       temple_model_->draw_commands.data(),
                        GL_DYNAMIC_STORAGE_BIT);
 
   /// Configure shaders and buffers for rendering
-  basic_shader_->use();
-  basic_shader_->setMat4("projection", getProjectionMatrix());
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertex_data_buffer);
   glBindTextureUnit(0, texture_array);
+  basic_shader_->use();
   basic_shader_->setInt("texture_array", 0);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer);
@@ -143,14 +155,20 @@ void Renderer::render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   basic_shader_->setMat4("view", camera_->getViewMatrix());
+  basic_shader_->setMat4("projection", camera_->getProjectionMatrix()); // may change on window resize
   glMultiDrawElementsIndirect(
       GL_TRIANGLES,
       GL_UNSIGNED_INT,
-      (const void*) nullptr,
-      temple_model_->draw_commands.size(),
+      nullptr,
+      static_cast<GLsizei>(temple_model_->draw_commands.size()),
       0);
 }
 void Renderer::renderTerminate() {
+}
+
+void Renderer::framebufferSizeCallback(int width, int height) {
+  Initializer::framebufferSizeCallback(width, height);
+  camera_->aspect_ratio_ = static_cast<float>(width) / static_cast<float>(height);
 }
 
 void Renderer::cursorPosCallback(float x_pos, float y_pos) {

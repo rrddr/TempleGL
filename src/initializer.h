@@ -45,7 +45,7 @@ class Initializer {
   virtual void renderTerminate() {}
 
   /// Callbacks
-  virtual void framebufferSizeCallback(int width, int height) final;
+  virtual void framebufferSizeCallback(int width, int height);
   virtual void cursorPosCallback(float x_pos, float y_pos) {}
   virtual void scrollCallback(float y_offset) {}
   static void glfwErrorCallback(int error_code, const char* description);
