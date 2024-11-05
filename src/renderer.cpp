@@ -22,8 +22,8 @@ void Renderer::loadConfigYaml() {
     auto init_pos_vector = camera_values["position"].as<std::vector<float>>();
     if (init_pos_vector.size() != 3) {
       std::cerr << "WARNING (Renderer::loadConfigYaml): invalid setting in config.yaml, "
-                << "camera.initial_values.position_ must be an array of exactly 3 floats."
-                << "Defaulting to initial position_ [0.0, 0.0, 0.0]." << std::endl;
+                << "camera.initial_values.position must be an array of exactly 3 floats."
+                << "Defaulting to initial position [0.0, 0.0, 0.0]." << std::endl;
       config_.initial_camera_pos = glm::vec3(0.0f);
     } else {
       config_.initial_camera_pos = glm::vec3(init_pos_vector[0], init_pos_vector[1], init_pos_vector[2]);

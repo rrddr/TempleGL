@@ -58,7 +58,6 @@ ShaderProgram::ShaderProgram(const ShaderProgram::Stages& stages) {
   shader_ids.push_back(compileShader(stages.compute_shader_source, GL_COMPUTE_SHADER));
 
   for (GLuint shader_id : shader_ids) {
-    // compileShader returns zero for empty source string
     if (shader_id) {
       glAttachShader(program_id, shader_id);
     }

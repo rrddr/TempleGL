@@ -89,7 +89,7 @@ class ShaderProgram {
   GLuint program_id;
 
   /**
-   * Compiles one stage of a shader program, and returns the id of the generated shader object.
+   * Compiles one stage of a shader program.
    *
    * @param shader_string   The GLSL source code to be compiled.
    * @param shader_type     One of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER,
@@ -100,9 +100,9 @@ class ShaderProgram {
   [[nodiscard]] static GLuint compileShader(const std::string& shader_string, GLenum shader_type) ;
 
   /**
-   * Used to check for errors after compiling or linking. Sends an OpenGL debug message event if any errors occurred.
-   * File read and linking errors are Medium severity, compile errors are Low severity (since they are often duplicated
-   * in the linking error message).
+   * Sends an OpenGL debug message event if any errors occurred during most recent glCompileShader() or glLinkProgram()
+   * call. File read and linking errors are High severity, compile errors are Medium severity (since they are often
+   * duplicated in the linking error message).
    *
    * @param program_or_shader       The id of either the shader object, or the program being inspected.
    * @param program_or_shader_type  When inspecting a shader, this should be the corresponding shader type.

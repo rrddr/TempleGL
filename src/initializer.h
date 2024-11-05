@@ -23,7 +23,7 @@ struct MinimalInitializerConfig {
  *
  * @tparam CONFIG_TYPE  Should derive from MinimalInitializerConfig.
  */
-template <typename CONFIG_TYPE>
+template<typename CONFIG_TYPE>
 class Initializer {
  public:
   virtual void run() final;
@@ -34,7 +34,7 @@ class Initializer {
   bool lock_gl_viewport{false}; // prevent unwanted calls to glViewport while rendering to a non-default framebuffer
 
   /// Program stages
-  virtual void loadConfigYaml();
+  virtual void loadConfigYaml();        // Should initialize all fields in CONFIG_TYPE
   virtual void init() final;
   virtual void renderSetup() {}
   virtual void updateRenderState() {}

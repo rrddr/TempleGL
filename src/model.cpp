@@ -6,6 +6,7 @@
 #include <assimp/Importer.hpp>
 
 #include <format>
+#include <filesystem>
 
 Model::Model(const std::string& obj_path) {
   // Importer keeps ownership of all assimp resources, and destroys them once it goes out of scope
@@ -40,6 +41,12 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
     aiString material_name = materials[i]->GetName();
     for (auto folder : {"diffuse/", "specular/", "normal/"}) {
       std::string path = source_dir_ + folder + material_name.C_Str() + ".png";
+      if (!std::filesystem::exists(path)) {
+        glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+                             std::format("(Model::createTextureArray): Using default {} texture for material '{}'",
+                                         folder, material_name.C_Str()).c_str());
+        path = source_dir_ + folder + "DefaultMaterial.png";
+      }
       int width, height, nrComponents; // we ignore these values, but stbi_load expects valid references
       unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, STBI_rgb);
       if (!data) {
@@ -54,6 +61,8 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
   }
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+                       "Model::createTextureArray() successful.");
 }
 
 void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
@@ -102,6 +111,9 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
   createBufferFromVector<Vertex>(vertex_buffer_, vertices);
   createBufferFromVector<GLuint>(index_buffer_, indices);
   createBufferFromVector<DrawElementsIndirectCommand>(draw_command_buffer_, draw_commands);
+
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+                       "Model::createBuffers() successful.");
 }
 
 template<typename T>
