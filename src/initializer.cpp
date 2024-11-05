@@ -1,5 +1,7 @@
 #include "initializer.h"
 
+#include <glad/glad.h>
+
 #include <yaml-cpp/yaml.h>
 #include <yaml-cpp/exceptions.h>
 
@@ -28,8 +30,7 @@ void Initializer<T>::loadConfigYaml() {
     config_yaml = YAML::LoadFile("../config.yaml");
   }
   catch (YAML::Exception& e) {
-    std::cerr << "Initialization ERROR: Failed to load config.yaml. yaml-cpp threw: " << std::endl
-              << typeid(e).name() << std::endl;
+    std::cerr << "ERROR (Initializer::loadConfigYaml): Failed to load config.yaml." << std::endl;
     throw; // re-throw to main
   }
   try {
@@ -47,14 +48,13 @@ void Initializer<T>::loadConfigYaml() {
     else if (debug_level_str == "medium") { config_.debug_level = MEDIUM; }
     else if (debug_level_str == "high") { config_.debug_level = HIGH; }
     else {
-      std::cerr << "Initialization WARNING: invalid setting in config.yaml, "
-                << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'." << std::endl;
+      std::cerr << "WARNING (Initializer::loadConfigYaml): invalid setting in config.yaml, "
+                << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'."  << std::endl;
       config_.debug_level = ALL;
     }
   }
   catch (YAML::Exception& e) {
-    std::cerr << "Initialization ERROR: Failed to parse config.yaml. yaml-cpp threw:" << std::endl
-              << typeid(e).name() << std::endl;
+    std::cerr << "ERROR (Initializer::loadConfigYaml): Failed to parse config.yaml." << std::endl;
     throw; // re-throw to main
   }
 }
@@ -64,7 +64,7 @@ void Initializer<T>::init() {
   /// Initialize GLFW
   glfwSetErrorCallback(glfwErrorCallback);
   if (!glfwInit()) {
-    throw std::runtime_error("Initialization ERROR: failed to initialize GLFW.");
+    throw std::runtime_error("ERROR (Initializer::init): failed to initialize GLFW.");
   }
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -77,7 +77,7 @@ void Initializer<T>::init() {
   window_ =
       glfwCreateWindow(config_.window_width, config_.window_height, config_.window_name.c_str(), nullptr, nullptr);
   if (!window_) {
-    throw std::runtime_error("Initialization ERROR: Failed to create GLFW window object.");
+    throw std::runtime_error("ERROR (Initializer::init): Failed to create GLFW window object.");
   }
   glfwMakeContextCurrent(window_);
   glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -102,14 +102,14 @@ void Initializer<T>::init() {
 
   /// Initialize GLAD
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-    throw std::runtime_error("Initialization ERROR: Failed to initialize GLAD.");
+    throw std::runtime_error("ERROR (Initializer::init): Failed to initialize GLAD.");
   }
 
   /// Configure OpenGL debug output
   int flags;
   glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
   if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) { // Check if GLFW created a debug context (i.e. if debug_enabled = true)
-    std::cout << "OpenGL Debug Output enabled" << std::endl;
+    std::cout << "INFO (Initializer::init): OpenGL debug output enabled." << std::endl;
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(debugMessageCallback, nullptr);
@@ -124,6 +124,9 @@ void Initializer<T>::init() {
       glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, GL_FALSE);
     }
   }
+
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+                       "Initializer::init() successful.");
 }
 
 template <typename T>
@@ -148,7 +151,6 @@ void Initializer<T>::glfwErrorCallback(int error_code, const char* description) 
 template <typename T>
 void APIENTRY Initializer<T>::debugMessageCallback(GLenum source, GLenum type, unsigned int id, GLenum severity,
                                                 GLsizei length, const char* message, const void* user_param) {
-  std::cout << "---------------" << std::endl;
   std::cout << "Debug message (" << id << ")";
   std::cout << " | Source: ";
   switch (source) {
@@ -225,5 +227,5 @@ void APIENTRY Initializer<T>::debugMessageCallback(GLenum source, GLenum type, u
       std::cout << "Unrecognized GLenum value " << severity;
       break;
   }
-  std::cout << std::endl << "Message: " << message << std::endl;
+  std::cout << std::endl << "Message: " << message << std::endl << std::endl;
 }

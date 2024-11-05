@@ -14,6 +14,7 @@ add_executable(TempleGL src/main.cpp
         src/initializer.cpp
         src/renderer.h
         src/renderer.cpp
+        src/opengl_wrappers.h
 )
 
 find_package(glfw3 CONFIG REQUIRED)

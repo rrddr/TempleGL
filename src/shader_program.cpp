@@ -40,8 +40,8 @@ std::string ShaderProgram::Stages::loadShaderSource(const std::string& shader_pa
     return shader_source;
   }
   catch (std::ifstream::failure& e) {
-    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
-                         std::format("Shader source load error: Failed to read file from path '{}'",
+    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1,
+                         std::format("(ShaderProgram::Stages::loadShaderSource): Failed to read file from path '{}'",
                                      shader_path).c_str());
     return "";
   }
@@ -96,7 +96,7 @@ void ShaderProgram::checkCompileOrLinkErrors(GLuint program_or_shader, GLenum pr
     glGetProgramiv(program_or_shader, GL_LINK_STATUS, &success);
     if (!success) {
       glGetProgramInfoLog(program_or_shader, log_length, nullptr, info_log);
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1,
                            std::format("Program/shader linking error(s):\n{}", info_log).c_str());
     }
   } else {
@@ -127,9 +127,9 @@ void ShaderProgram::checkCompileOrLinkErrors(GLuint program_or_shader, GLenum pr
           type = "Unknown";
           break;
       }
-      // Low severity, because this information is often duplicated in linking error message
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_LOW, -1,
-                           std::format("{} shader compile error:\n{}", type, info_log).c_str());
+      // Medium severity, because this information is often duplicated in linking error message
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
+                           std::format("{} shader compile error(s):\n{}", type, info_log).c_str());
     }
   }
 }

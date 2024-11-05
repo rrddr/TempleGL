@@ -1,6 +1,9 @@
 #ifndef TEMPLEGL_SRC_MODEL_H_
 #define TEMPLEGL_SRC_MODEL_H_
 
+#include "opengl_wrappers.h"
+#include "shader_program.h"
+
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
@@ -8,36 +11,40 @@
 #include <string>
 #include <memory>
 
-struct DrawElementsIndirectCommand {
-  unsigned int count;
-  unsigned int instance_count;
-  unsigned int first_vertex;
-  int          base_vertex;
-  unsigned int base_instance;
-};
-
-struct CustomStbiDeleter {
-  void operator()(unsigned char* data);
-};
 
 class Model {
  public:
-  struct Vertex {
-    float position[3];
-    float uv[2];
-  };
-  std::vector<Vertex> vertices;
-  std::vector<unsigned int> indices;
-  std::vector<std::unique_ptr<unsigned char, CustomStbiDeleter>> texture_data;
-  std::vector<DrawElementsIndirectCommand> draw_commands;
-
   explicit Model(const std::string& obj_path);
 
+  void drawSetup(const std::unique_ptr<ShaderProgram>& shader) const;
+  inline void draw() const {
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, num_draw_commands_, 0);
+  }
+
  private:
-  std::string source_dir;
+  struct Vertex {
+    GLfloat position[3];
+    GLfloat uv[2];
+  };
+  struct DrawElementsIndirectCommand {
+    GLuint count;
+    GLuint instance_count;
+    GLuint first_vertex;
+    GLint  base_vertex;
+    GLuint base_instance;
+  };
 
-  void loadTextureData(aiMaterial** materials, unsigned int num_materials);
-  void loadVertexData(aiMesh** meshes, unsigned int num_meshes);
+  std::string source_dir_;
+  GLsizei num_draw_commands_;
+
+  wrap::Buffer vertex_buffer_ {};
+  wrap::Buffer index_buffer_ {};
+  wrap::Buffer draw_command_buffer_ {};
+  wrap::Texture texture_array_ {};
+
+  template<typename T>
+  static void createBufferFromVector(wrap::Buffer& buffer, std::vector<T> vector);
+  void createBuffers(aiMesh** meshes, unsigned int num_meshes);
+  void createTextureArray(aiMaterial** materials, unsigned int num_materials);
 };
-
 #endif //TEMPLEGL_SRC_MODEL_H_

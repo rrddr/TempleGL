@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "model.h"
 #include "shader_program.h"
+#include "opengl_wrappers.h"
 
 #include <glm/glm.hpp>
 
@@ -41,6 +42,7 @@ struct RendererConfig : MinimalInitializerConfig {
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<Model> temple_model_;
   std::unique_ptr<ShaderProgram> basic_shader_;
+  wrap::VertexArray vao_ {};
 
   /// Program stages
   void loadConfigYaml() override;
