@@ -87,22 +87,22 @@ void Renderer::updateRenderState() {
 void Renderer::processKeyboardInput() {
   Initializer::processKeyboardInput();
   if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) {
-    camera_->processKeyboard(FORWARD, state_.delta_time);
+    camera_->processKeyboard(Camera::FORWARD, state_.delta_time);
   }
   if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) {
-    camera_->processKeyboard(BACKWARD, state_.delta_time);
+    camera_->processKeyboard(Camera::BACKWARD, state_.delta_time);
   }
   if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) {
-    camera_->processKeyboard(LEFT, state_.delta_time);
+    camera_->processKeyboard(Camera::LEFT, state_.delta_time);
   }
   if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) {
-    camera_->processKeyboard(RIGHT, state_.delta_time);
+    camera_->processKeyboard(Camera::RIGHT, state_.delta_time);
   }
   if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) {
-    camera_->processKeyboard(UP, state_.delta_time);
+    camera_->processKeyboard(Camera::UP, state_.delta_time);
   }
   if (glfwGetKey(window_, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-    camera_->processKeyboard(DOWN, state_.delta_time);
+    camera_->processKeyboard(Camera::DOWN, state_.delta_time);
   }
 }
 

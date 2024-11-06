@@ -4,8 +4,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-enum CameraMoveDirection { FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN };
-
 /**
  *  Abstract camera object that can be positioned and oriented in world space. Also provides methods for computing
  *  view and projection matrices.
@@ -35,6 +33,8 @@ class Camera {
   }
   inline void updateAspectRatio(float aspect_ratio) { config_.aspect_ratio = aspect_ratio; }
 
+  enum MoveDirection { FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN };
+
   /**
    * Changes the camera position in world space.
    *
@@ -42,7 +42,7 @@ class Camera {
    *                    camera orientation. UP and DOWN refer to world space y-axis.
    * @param delta_time  Time interval during which movement occurs. In practice: time it took to render this frame.
    */
-  void processKeyboard(CameraMoveDirection direction, float delta_time);
+  void processKeyboard(MoveDirection direction, float delta_time);
 
   /**
    * Changes the camera orientation based on mouse movement. Pitch is clamped between -PI/2 and PI/2.

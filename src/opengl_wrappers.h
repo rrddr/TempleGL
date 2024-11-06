@@ -5,8 +5,8 @@
 
 /**
  * By wrapping the id of a created OpenGL object in the appropriate struct below, we can be sure it will be deleted
- * when it goes out of scope. Additionally, a debug message is sent when this happens, which is very helpful
- * for finding the cause of otherwise very hard to diagnose bugs.
+ * when it goes out of scope. Additionally, a debug message is sent when this happens, which is helpful for finding
+ * the cause of otherwise very hard to diagnose bugs.
  */
 namespace wrap {
   struct Texture {

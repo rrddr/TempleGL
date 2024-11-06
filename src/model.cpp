@@ -11,7 +11,7 @@
 Model::Model(const std::string& obj_path) {
   // Importer keeps ownership of all assimp resources, and destroys them once it goes out of scope
   Assimp::Importer importer;
-  const aiScene* scene{importer.ReadFile(obj_path, aiProcess_Triangulate)};
+  const aiScene* scene {importer.ReadFile(obj_path, aiProcess_Triangulate)};
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1,
@@ -36,25 +36,34 @@ void Model::drawSetup(const std::unique_ptr<ShaderProgram>& shader) const {
 void Model::createTextureArray(aiMaterial** materials, unsigned int num_materials) {
   glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array_.id);
   glTextureStorage3D(texture_array_.id, 1, GL_RGB8, 128, 128, static_cast<GLsizei>(num_materials) * 3);
-  GLint z_offset{0};
+  GLint z_offset {0};
   for (int i = 0; i < num_materials; ++i) {
     aiString material_name = materials[i]->GetName();
     for (auto folder : {"diffuse/", "specular/", "normal/"}) {
       std::string path = source_dir_ + folder + material_name.C_Str() + ".png";
       if (!std::filesystem::exists(path)) {
         glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                             std::format("(Model::createTextureArray): Using default {} texture for material '{}'",
+                             std::format("(Model::createTextureArray): Using default {} texture for material '{}.'",
                                          folder, material_name.C_Str()).c_str());
         path = source_dir_ + folder + "DefaultMaterial.png";
       }
-      int width, height, nrComponents; // we ignore these values, but stbi_load expects valid references
+      int width, height, nrComponents;
       unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, STBI_rgb);
       if (!data) {
         glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
-                             std::format("(Model::createTextureArray): Failed to read file from path '{}'",
+                             std::format("(Model::createTextureArray): Failed to read file from path '{}.'",
                                          path).c_str());
+      } else if (width != 128 || height != 128) {
+        glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
+                             std::format("(Model::createTextureArray): Texture '{}' does not have required dimensions "
+                                         "(128x128).", path).c_str());
+      } else if (nrComponents < 3) {
+        glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
+                             std::format("(Model::createTextureArray): Texture '{}' does not have required number of "
+                                         "channels (>=3).", path).c_str());
+      } else {
+        glTextureSubImage3D(texture_array_.id, 0, 0, 0, z_offset, 128, 128, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
       }
-      glTextureSubImage3D(texture_array_.id, 0, 0, 0, z_offset, 128, 128, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
       stbi_image_free(data);
       ++z_offset;
     }
@@ -72,7 +81,7 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
 
   GLint base_vertex = 0;
   GLuint first_index = 0;
-  Vertex vertex{};
+  Vertex vertex {};
   for (int i = 0; i < num_meshes; ++i) {
     aiMesh* mesh = meshes[i];
 

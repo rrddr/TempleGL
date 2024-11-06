@@ -4,10 +4,10 @@ Camera::Camera(glm::vec3 position, float yaw, float pitch, float speed, float ma
                float fov, float aspect_ratio, float near_plane, float far_plane)
     : config_ {fov, aspect_ratio, near_plane, far_plane, max_speed},
       state_ {position, {}, {}, {}, yaw, pitch, speed} {
-  updateCameraVectors(); // front, right, up initialized here based on yaw pitch
+  updateCameraVectors(); // front, right, and up initialized here based on yaw and pitch
 }
 
-void Camera::processKeyboard(CameraMoveDirection direction, float delta_time) {
+void Camera::processKeyboard(MoveDirection direction, float delta_time) {
   float units_moved = state_.move_speed * delta_time;
   switch (direction) {
     case FORWARD:

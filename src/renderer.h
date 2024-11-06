@@ -57,5 +57,4 @@ class Renderer : public Initializer<RendererConfig> {
   void cursorPosCallback(float x_pos, float y_pos) override;
   void scrollCallback(float y_offset) override;
 };
-
 #endif //TEMPLEGL_SRC_RENDERER_H_
