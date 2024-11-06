@@ -4,17 +4,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-
 enum CameraMoveDirection { FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN };
 
 /**
- *  Abstract camera object that can be positioned and oriented in world space. Provides methods to control these
- *  values based on user input, as well as a method to compute view space transform matrix.
+ *  Abstract camera object that can be positioned and oriented in world space. Also provides methods for computing
+ *  view and projection matrices.
  */
 class Camera {
  public:
-  float aspect_ratio_; // needs to be updated on window resize
-
   explicit Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
                   float yaw = 0.0f,
                   float pitch = 0.0f,
@@ -25,18 +22,21 @@ class Camera {
                   float near_plane = 0.1f,
                   float far_plane = 50.0f);
 
-  /**
-   * Computes transform matrix from world space to view space.
-   */
-  inline glm::mat4 getViewMatrix() const { return glm::lookAt(position_, position_ + front_, up_); }
+  inline glm::mat4 getViewMatrix() const {
+    return glm::lookAt(state_.position,
+                       state_.position + state_.front,
+                       state_.up);
+  }
+  inline glm::mat4 getProjectionMatrix() const {
+    return glm::perspective(config_.fov,
+                            config_.aspect_ratio,
+                            config_.near_plane,
+                            config_.far_plane);
+  }
+  inline void updateAspectRatio(float aspect_ratio) { config_.aspect_ratio = aspect_ratio; }
 
   /**
-   * Computes transform matrix from view space to clip space.
-   */
-  inline glm::mat4 getProjectionMatrix() const { return glm::perspective(fov_, aspect_ratio_, near_plane_, far_plane_); }
-
-  /**
-   * Changes the camera position_ in world space.
+   * Changes the camera position in world space.
    *
    * @param direction   Desired direction to move in. FORWARD, BACKWARD, LEFT, and RIGHT are interpreted relative to
    *                    camera orientation. UP and DOWN refer to world space y-axis.
@@ -47,13 +47,13 @@ class Camera {
   /**
    * Changes the camera orientation based on mouse movement. Pitch is clamped between -PI/2 and PI/2.
    *
-   * @param x_offset    Amount of horizontal mouse movement. Affects yaw_.
-   * @param y_offset    Amount of vertical mouse movement. Affects pitch_.
+   * @param x_offset    Amount of horizontal mouse movement. Affects yaw.
+   * @param y_offset    Amount of vertical mouse movement. Affects pitch.
    */
   void processMouseMovement(float x_offset, float y_offset);
 
   /**
-   * Changes the internal move_speed_ parameter based on scroll wheel input.
+   * Changes the internal move_speed parameter based on scroll wheel input.
    *
    * @param offset  Amount that the wheel was scrolled.
    * @param delta_time  Time interval during which change occurs. In practice: time it took to render this frame.
@@ -61,13 +61,27 @@ class Camera {
   void processMouseScroll(float offset, float delta_time);
 
  private:
-  // Camera position_ and orientation
-  float yaw_, pitch_;
-  glm::vec3 position_, front_, up_, right_, world_up_;
-  // Camera movement
-  float move_speed_, max_move_speed_;
-  // View frustum
-  float fov_, near_plane_, far_plane_;
+  struct Config {
+    float fov;
+    float aspect_ratio;
+    float near_plane;
+    float far_plane;
+    float max_move_speed;
+  };
+  struct State {
+    glm::vec3 position;
+    glm::vec3 front;
+    glm::vec3 up;
+    glm::vec3 right;
+    float yaw;
+    float pitch;
+    float move_speed;
+  };
+  Config config_ {};
+  State state_ {};
+
+  static constexpr glm::vec3 WORLD_UP {0.0f, 1.0f, 0.0f};
+  static constexpr float HALF_PI {1.57079632679f};
 
   void updateCameraVectors();
 };

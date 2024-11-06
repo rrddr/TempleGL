@@ -11,7 +11,9 @@
 #include <string>
 #include <memory>
 
-
+/**
+ *
+ */
 class Model {
  public:
   explicit Model(const std::string& obj_path);

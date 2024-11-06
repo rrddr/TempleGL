@@ -7,12 +7,12 @@
 #include <string>
 
 /**
- * Used to create and interact with an OpenGL Shader Program.
+ * Used to create and interact with an OpenGL shader program.
  */
 class ShaderProgram {
  public:
   /**
-   * Stores GLSL source code for each shader stage used in this program.
+   * Stores GLSL source code for each shader stage used in a shader program.
    */
   class Stages {
    public:
@@ -36,14 +36,12 @@ class ShaderProgram {
   };
 
   /**
-   * Constructor compiles and links all shader stages.
-   *
-   * @param stages  Contains the source code for each stage used in this program. Empty stages will be skipped.
+   * Constructor compiles and links all shader stages. Empty stages are skipped.
    */
   explicit ShaderProgram(const Stages& stages);
   ~ShaderProgram() { glDeleteProgram(program_id); }
 
-  /// Utility methods for interacting with the Shader Program
+  /// Utility methods
   inline void use() const { glUseProgram(program_id); }
   inline void setBool(const std::string& name, bool value) const {
     glUniform1i(glGetUniformLocation(program_id, name.c_str()), (int) value);
@@ -95,14 +93,14 @@ class ShaderProgram {
    * @param shader_type     One of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER,
    *                        GL_GEOMETRY_SHADER, GL_FRAGMENT_SHADER, or GL_COMPUTE_SHADER.
    *
-   * @returns   The id of the generated shader object. The object must be manually deleted using { glDeleteShader() }.
+   * @returns   The id of the generated shader object. The object must be manually deleted using glDeleteShader().
    */
   [[nodiscard]] static GLuint compileShader(const std::string& shader_string, GLenum shader_type) ;
 
   /**
    * Sends an OpenGL debug message event if any errors occurred during most recent glCompileShader() or glLinkProgram()
    * call. File read and linking errors are High severity, compile errors are Medium severity (since they are often
-   * duplicated in the linking error message).
+   * duplicated in the resulting linking error message).
    *
    * @param program_or_shader       The id of either the shader object, or the program being inspected.
    * @param program_or_shader_type  When inspecting a shader, this should be the corresponding shader type.

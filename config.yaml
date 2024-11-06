@@ -18,7 +18,7 @@ camera:
   view_frustum:
     fov: 90.0   # degrees
     near_plane: 0.1
-    far_plane: 50.0
+    far_plane: 75.0
 model:
   source_path: ../model    # global, or relative to executable
 shader:

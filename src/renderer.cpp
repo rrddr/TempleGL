@@ -122,7 +122,7 @@ void Renderer::renderTerminate() {
 
 void Renderer::framebufferSizeCallback(int width, int height) {
   Initializer::framebufferSizeCallback(width, height);
-  camera_->aspect_ratio_ = static_cast<float>(width) / static_cast<float>(height);
+  camera_->updateAspectRatio(static_cast<float>(width) / static_cast<float>(height));
 }
 
 void Renderer::cursorPosCallback(float x_pos, float y_pos) {

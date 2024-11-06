@@ -29,7 +29,7 @@ struct RendererConfig : MinimalInitializerConfig {
 /**
  * Implements the non-boilerplate methods declared by the abstract Initializer class.
  */
- class Renderer : public Initializer<RendererConfig> {
+class Renderer : public Initializer<RendererConfig> {
  private:
   struct State {
     bool first_time_receiving_mouse_input;
@@ -38,7 +38,7 @@ struct RendererConfig : MinimalInitializerConfig {
     float current_time;
     float delta_time;
   };
-  State state_{};
+  State state_ {};
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<Model> temple_model_;
   std::unique_ptr<ShaderProgram> basic_shader_;
