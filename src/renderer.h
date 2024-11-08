@@ -30,7 +30,6 @@ struct RendererConfig : MinimalInitializerConfig {
  * Implements the non-boilerplate methods declared by the abstract Initializer class.
  */
 class Renderer : public Initializer<RendererConfig> {
- private:
   struct State {
     bool first_time_receiving_mouse_input;
     float mouse_x;

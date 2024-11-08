@@ -12,15 +12,16 @@
 #include <memory>
 
 /**
- * Implements everything needed to draw a model using a Multi-Draw Indirect method, using a uniform array for textures.
+ * Implements everything needed to draw a model, using Multi-Draw Indirect and a uniform array for textures.
  */
 class Model {
  public:
   /**
-   * Parses a Wavefront .obj file, and loads the data into the required OpenGL buffers.
+   * Parses a Wavefront .obj file, and loads the data into OpenGL buffers.
    * <p>
    * No .mtl file is needed. Instead the material name will be used to look for textures at:
-   * <.obj-parent-dir>/diffuse/<mtl-name>.png, <.obj-parent-dir>/normal/<mtl-name>.png, and
+   * <.obj-parent-dir>/diffuse/<mtl-name>.png,
+   * <.obj-parent-dir>/normal/<mtl-name>.png, and
    * <.obj-parent-dir>/specular/<mtl-name>.png.
    * <p>
    * The textures should be 128x128, in RGB or RGBA format. Missing textures will be replaced by DefaultMaterial.png
