@@ -6,7 +6,7 @@ window:
   initial_y_pos: 50
 debug:
   enabled: true
-  level: all    # <all | low | medium | high>  Minimum severity of debug messages that should be shown.
+  level: low    # <all | low | medium | high>  Minimum severity of debug messages that should be shown.
 camera:
   initial_values:
     position: [-20.0, 20.0, 0.0]

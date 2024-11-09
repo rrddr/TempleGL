@@ -17,6 +17,8 @@ add_executable(TempleGL src/main.cpp
         src/opengl_wrappers.h
         src/skybox.cpp
         src/skybox.h
+        src/stbi_helpers.h
+        src/stbi_helpers.cpp
 )
 
 find_package(glfw3 CONFIG REQUIRED)

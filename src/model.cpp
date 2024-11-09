@@ -1,8 +1,7 @@
 #include "model.h"
+#include "stbi_helpers.h"
 
 #include <glad/glad.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include <assimp/Importer.hpp>
 
 #include <format>
@@ -35,7 +34,7 @@ void Model::drawSetup(const std::unique_ptr<ShaderProgram>& shader) const {
 
 void Model::createTextureArray(aiMaterial** materials, unsigned int num_materials) {
   glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array_.id);
-  glTextureStorage3D(texture_array_.id, 1, GL_RGB8, 128, 128, static_cast<GLsizei>(num_materials) * 3);
+  glTextureStorage3D(texture_array_.id, 1, GL_RGB8, TEX_SIZE, TEX_SIZE, static_cast<GLsizei>(num_materials) * 3);
   GLint z_offset {0};
   for (int i = 0; i < num_materials; ++i) {
     aiString material_name = materials[i]->GetName();
@@ -47,24 +46,7 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
                                          folder, material_name.C_Str()).c_str());
         path = source_dir_ + folder + "DefaultMaterial.png";
       }
-      int width, height, nrComponents;
-      unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, STBI_rgb);
-      if (!data) {
-        glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
-                             std::format("(Model::createTextureArray): Failed to read file from path '{}.'",
-                                         path).c_str());
-      } else if (width != 128 || height != 128) {
-        glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
-                             std::format("(Model::createTextureArray): Texture '{}' does not have required dimensions "
-                                         "(128x128).", path).c_str());
-      } else if (nrComponents < 3) {
-        glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
-                             std::format("(Model::createTextureArray): Texture '{}' does not have required number of "
-                                         "channels (>=3).", path).c_str());
-      } else {
-        glTextureSubImage3D(texture_array_.id, 0, 0, 0, z_offset, 128, 128, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
-      }
-      stbi_image_free(data);
+      help::fill3DTextureLayer(path, texture_array_, z_offset, TEX_SIZE, TEX_SIZE);
       ++z_offset;
     }
   }

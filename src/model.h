@@ -70,6 +70,8 @@ class Model {
   wrap::Buffer draw_command_buffer_ {};
   wrap::Texture texture_array_ {};
 
+  static constexpr GLsizei TEX_SIZE {128};
+
   template<typename T>
   static void createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector);
   void createBuffers(aiMesh** meshes, unsigned int num_meshes);

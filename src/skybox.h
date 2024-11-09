@@ -9,7 +9,7 @@
 #include <memory>
 
 /**
- * Loads and draws the skybox.
+ * Draws the skybox.
  */
 class Skybox {
  public:
