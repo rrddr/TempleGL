@@ -24,8 +24,8 @@ class Model {
    * <.obj-parent-dir>/normal/<mtl-name>.png, and
    * <.obj-parent-dir>/specular/<mtl-name>.png.
    * <p>
-   * The textures should be 128x128, in RGB or RGBA format. Missing textures will be replaced by DefaultMaterial.png
-   * (if available), but bad textures may result in unexpected behaviour.
+   * The textures should be 128x128, in RGB or RGBA format (4th channel will be ignored). Missing textures will be
+   * replaced by DefaultMaterial.png (if available), but bad textures may result in unexpected behaviour.
    *
    * @param obj_path    Path to a Wavefront .obj file satisfying the above requirements.
    */
@@ -41,7 +41,7 @@ class Model {
    * @param shader  Should read vertex data from an SSBO with binding = 0, containing an array of Vertex structs
    *                matching the definition below. Should define a sampler2DArray uniform named "texture_array".
    *                The vertex and material indices will be available as gl_VertexID and gl_BaseInstance respectively.
-   *                The diffuse texture for a material is layer gl_BaseInstance*3 of texture_array (normal is *3+1,
+   *                The diffuse texture for a given material is layer index*3 of texture_array (normal is *3+1,
    *                specular is *3+2).
    */
   void drawSetup(const std::unique_ptr<ShaderProgram>& shader) const;
@@ -71,7 +71,7 @@ class Model {
   wrap::Texture texture_array_ {};
 
   template<typename T>
-  static void createBufferFromVector(wrap::Buffer& buffer, std::vector<T> vector);
+  static void createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector);
   void createBuffers(aiMesh** meshes, unsigned int num_meshes);
   void createTextureArray(aiMaterial** materials, unsigned int num_materials);
 };

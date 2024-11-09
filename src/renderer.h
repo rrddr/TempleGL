@@ -5,6 +5,7 @@
 #include "initializer.cpp" // Implementations of template methods must be visible at compile time
 #include "camera.h"
 #include "model.h"
+#include "skybox.h"
 #include "shader_program.h"
 #include "opengl_wrappers.h"
 
@@ -36,11 +37,14 @@ class Renderer : public Initializer<RendererConfig> {
     float mouse_y;
     float current_time;
     float delta_time;
+    wrap::Buffer matrix_buffer;
   };
   State state_ {};
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<Model> temple_model_;
+  std::unique_ptr<Skybox> skybox_;
   std::unique_ptr<ShaderProgram> basic_shader_;
+  std::unique_ptr<ShaderProgram> skybox_shader_;
   wrap::VertexArray vao_ {};
 
   /// Program stages

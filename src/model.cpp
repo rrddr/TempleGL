@@ -126,8 +126,8 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
 }
 
 template<typename T>
-void Model::createBufferFromVector(wrap::Buffer& buffer, std::vector<T> vector) {
+void Model::createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector) {
   glCreateBuffers(1, &buffer.id);
-  glNamedBufferStorage(buffer.id, static_cast<GLsizeiptr>(sizeof(T) * vector.size()),
+  glNamedBufferStorage(buffer.id, sizeof(T) * static_cast<GLsizeiptr>(vector.size()),
                        vector.data(), GL_DYNAMIC_STORAGE_BIT);
 }

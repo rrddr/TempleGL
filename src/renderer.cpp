@@ -2,6 +2,7 @@
 
 #include <yaml-cpp/yaml.h>
 #include <yaml-cpp/exceptions.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #include <vector>
@@ -54,6 +55,10 @@ void Renderer::renderSetup() {
   glCreateVertexArrays(1, &vao_.id);
   glBindVertexArray(vao_.id);
 
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
+  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
   state_.first_time_receiving_mouse_input = true;
   state_.current_time = static_cast<float>(glfwGetTime());
   auto aspect_ratio = static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height);
@@ -66,13 +71,36 @@ void Renderer::renderSetup() {
                                      aspect_ratio,
                                      config_.camera_near_plane,
                                      config_.camera_far_plane);
-  temple_model_ = std::make_unique<Model>(config_.model_path + "/minecraft.obj");
+  temple_model_ = std::make_unique<Model>(config_.model_path + "/temple/minecraft.obj");
+  std::vector<std::string> skybox_paths {
+    config_.model_path + "/skybox/px.png",
+    config_.model_path + "/skybox/nx.png",
+    config_.model_path + "/skybox/py.png",
+    config_.model_path + "/skybox/ny.png",
+    config_.model_path + "/skybox/pz.png",
+    config_.model_path + "/skybox/nz.png"
+  };
+  skybox_ = std::make_unique<Skybox>(skybox_paths);
   basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                       .vertex(config_.shader_path + "/basic.vert")
                                                       .fragment(config_.shader_path + "/basic.frag"));
-  glEnable(GL_DEPTH_TEST);
+  skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
+                                                      .vertex(config_.shader_path + "/sky.vert")
+                                                      .fragment(config_.shader_path + "/sky.frag"));
+  glCreateBuffers(1, &state_.matrix_buffer.id);
+  glNamedBufferStorage(state_.matrix_buffer.id, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferSubData(state_.matrix_buffer.id,
+                       0,
+                       sizeof(glm::mat4),
+                       glm::value_ptr(camera_->getProjectionMatrix()));
+  glNamedBufferSubData(state_.matrix_buffer.id,
+                       sizeof(glm::mat4),
+                       sizeof(glm::mat4),
+                       glm::value_ptr(camera_->getViewMatrix()));
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, state_.matrix_buffer.id);
 
   temple_model_->drawSetup(basic_shader_);
+  skybox_->drawSetup(skybox_shader_);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
                        "Renderer::renderSetup() successful.");
@@ -82,6 +110,10 @@ void Renderer::updateRenderState() {
   auto new_time = static_cast<float>(glfwGetTime());
   state_.delta_time = new_time - state_.current_time;
   state_.current_time = new_time;
+  glNamedBufferSubData(state_.matrix_buffer.id,
+                       sizeof(glm::mat4),
+                       sizeof(glm::mat4),
+                       glm::value_ptr(camera_->getViewMatrix()));
 }
 
 void Renderer::processKeyboardInput() {
@@ -110,9 +142,9 @@ void Renderer::render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   basic_shader_->use();
-  basic_shader_->setMat4("view", camera_->getViewMatrix());
-  basic_shader_->setMat4("projection", camera_->getProjectionMatrix()); // may change on window resize
   temple_model_->draw();
+  skybox_shader_->use();
+  skybox_->draw();
 }
 
 void Renderer::renderTerminate() {
@@ -123,6 +155,10 @@ void Renderer::renderTerminate() {
 void Renderer::framebufferSizeCallback(int width, int height) {
   Initializer::framebufferSizeCallback(width, height);
   camera_->updateAspectRatio(static_cast<float>(width) / static_cast<float>(height));
+  glNamedBufferSubData(state_.matrix_buffer.id,
+                       0,
+                       sizeof(glm::mat4),
+                       glm::value_ptr(camera_->getProjectionMatrix()));
 }
 
 void Renderer::cursorPosCallback(float x_pos, float y_pos) {

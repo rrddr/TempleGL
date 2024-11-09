@@ -1,5 +1,5 @@
+//FRAGMENT_SHADER
 #version 460 core
-
 in VS_OUT {
     flat int material_index;
     vec2 uv;
