@@ -1,16 +1,16 @@
 //VERTEX_SHADER
 #version 460 core
-layout (binding = 0, std140) uniform matrix_ubo {
-    uniform mat4 projection;
-    uniform mat4 view;
-};
-
 layout (binding = 1, std430) readonly buffer vertex_ubo {
     float data[108]; // This should match the hardcoded data in src/skybox.h
 };
 
+layout (binding = 0, std140) uniform matrix_ubo {
+    mat4 projection;
+    mat4 view;
+};
+
 out VS_OUT {
-    vec3 model_space_position;
+    smooth vec3 model_space_position;
 } vs_out;
 
 vec3 getPosition(int index);

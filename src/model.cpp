@@ -10,7 +10,11 @@
 Model::Model(const std::string& obj_path) {
   // Importer keeps ownership of all assimp resources, and destroys them once it goes out of scope
   Assimp::Importer importer;
-  const aiScene* scene {importer.ReadFile(obj_path, aiProcess_Triangulate)};
+  const aiScene* scene {importer.ReadFile(obj_path,
+                                          aiProcess_FlipUVs |
+                                          aiProcess_Triangulate |
+                                          aiProcess_GenNormals |
+                                          aiProcess_CalcTangentSpace)};
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1,
@@ -38,7 +42,7 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
   GLint z_offset {0};
   for (int i = 0; i < num_materials; ++i) {
     aiString material_name = materials[i]->GetName();
-    for (auto folder : {"diffuse/", "specular/", "normal/"}) {
+    for (auto folder : {"diffuse/", "normal/", "specular/"}) {
       std::string path = source_dir_ + folder + material_name.C_Str() + ".png";
       if (!std::filesystem::exists(path)) {
         glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
@@ -66,6 +70,12 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
   Vertex vertex {};
   for (int i = 0; i < num_meshes; ++i) {
     aiMesh* mesh = meshes[i];
+    if (mesh->mPrimitiveTypes != (aiPrimitiveType_TRIANGLE | aiPrimitiveType_NGONEncodingFlag)) {
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
+                           "(Model::createBuffers): Detected point/line primitives in mesh, which is not allowed. "
+                           "This mesh will be skipped.");
+      continue;
+    }
 
     /// Instead of storing meta-information somewhere, we use it to directly create a draw command for the mesh
     draw_commands.emplace_back(mesh->mNumFaces * 3, 1, first_index, base_vertex, mesh->mMaterialIndex);
@@ -75,6 +85,14 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
       vertex.position[0] = mesh->mVertices[j].x;
       vertex.position[1] = mesh->mVertices[j].y;
       vertex.position[2] = mesh->mVertices[j].z;
+
+      vertex.tangent[0] = mesh->mTangents[j].x;
+      vertex.tangent[1] = mesh->mTangents[j].y;
+      vertex.tangent[2] = mesh->mTangents[j].z;
+
+      vertex.bitangent[0] = mesh->mBitangents[j].x;
+      vertex.bitangent[1] = mesh->mBitangents[j].y;
+      vertex.bitangent[2] = mesh->mBitangents[j].z;
 
       if (mesh->mTextureCoords[0]) {
         vertex.uv[0] = mesh->mTextureCoords[0][j].x;
@@ -90,7 +108,6 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
     /// Append index data
     for (int j = 0; j < mesh->mNumFaces; ++j) {
       aiFace face = mesh->mFaces[j];
-      if (face.mNumIndices != 3) { continue; } // ignore this edge case, we should only ever have triangle faces
       indices.push_back(face.mIndices[0]);
       indices.push_back(face.mIndices[1]);
       indices.push_back(face.mIndices[2]);

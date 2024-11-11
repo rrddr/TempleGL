@@ -38,6 +38,7 @@ class Renderer : public Initializer<RendererConfig> {
     float current_time;
     float delta_time;
     wrap::Buffer matrix_buffer;
+    wrap::Buffer light_buffer;
   };
   State state_ {};
   std::unique_ptr<Camera> camera_;
@@ -46,6 +47,15 @@ class Renderer : public Initializer<RendererConfig> {
   std::unique_ptr<ShaderProgram> basic_shader_;
   std::unique_ptr<ShaderProgram> skybox_shader_;
   wrap::VertexArray vao_ {};
+
+  struct DirectionalLight {
+    glm::vec4 origin;
+    glm::vec4 color;
+  };
+  static constexpr DirectionalLight sunlight {
+    {-0.4f, 0.8f, -1.0f, 1.0f},
+    {1.0f, 1.0f, 1.0f, 1.0f},
+  };
 
   /// Program stages
   void loadConfigYaml() override;

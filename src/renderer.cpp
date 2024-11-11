@@ -73,22 +73,26 @@ void Renderer::renderSetup() {
                                      config_.camera_far_plane);
   temple_model_ = std::make_unique<Model>(config_.model_path + "/temple/minecraft.obj");
   std::vector<std::string> skybox_paths {
-    config_.model_path + "/skybox/px.png",
-    config_.model_path + "/skybox/nx.png",
-    config_.model_path + "/skybox/py.png",
-    config_.model_path + "/skybox/ny.png",
-    config_.model_path + "/skybox/pz.png",
-    config_.model_path + "/skybox/nz.png"
+      config_.model_path + "/skybox/px.png",
+      config_.model_path + "/skybox/nx.png",
+      config_.model_path + "/skybox/py.png",
+      config_.model_path + "/skybox/ny.png",
+      config_.model_path + "/skybox/pz.png",
+      config_.model_path + "/skybox/nz.png"
   };
   skybox_ = std::make_unique<Skybox>(skybox_paths);
   basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                       .vertex(config_.shader_path + "/basic.vert")
                                                       .fragment(config_.shader_path + "/basic.frag"));
   skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                      .vertex(config_.shader_path + "/sky.vert")
-                                                      .fragment(config_.shader_path + "/sky.frag"));
+                                                       .vertex(config_.shader_path + "/sky.vert")
+                                                       .fragment(config_.shader_path + "/sky.frag"));
+
   glCreateBuffers(1, &state_.matrix_buffer.id);
-  glNamedBufferStorage(state_.matrix_buffer.id, 2 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferStorage(state_.matrix_buffer.id,
+                       2 * sizeof(glm::mat4),
+                       nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
   glNamedBufferSubData(state_.matrix_buffer.id,
                        0,
                        sizeof(glm::mat4),
@@ -98,6 +102,21 @@ void Renderer::renderSetup() {
                        sizeof(glm::mat4),
                        glm::value_ptr(camera_->getViewMatrix()));
   glBindBufferBase(GL_UNIFORM_BUFFER, 0, state_.matrix_buffer.id);
+
+  glCreateBuffers(1, &state_.light_buffer.id);
+  glNamedBufferStorage(state_.light_buffer.id,
+                       sizeof(glm::vec4) + sizeof(DirectionalLight),
+                       nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferSubData(state_.light_buffer.id,
+                       0,
+                       sizeof(glm::vec4),
+                       glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
+  glNamedBufferSubData(state_.light_buffer.id,
+                       sizeof(glm::vec4),
+                       sizeof(DirectionalLight),
+                       &sunlight);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, state_.light_buffer.id);
 
   temple_model_->drawSetup(basic_shader_);
   skybox_->drawSetup(skybox_shader_);
@@ -114,6 +133,10 @@ void Renderer::updateRenderState() {
                        sizeof(glm::mat4),
                        sizeof(glm::mat4),
                        glm::value_ptr(camera_->getViewMatrix()));
+  glNamedBufferSubData(state_.light_buffer.id,
+                       0,
+                       sizeof(glm::vec4),
+                       glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
 }
 
 void Renderer::processKeyboardInput() {

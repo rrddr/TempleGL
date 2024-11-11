@@ -28,7 +28,7 @@ class Skybox {
    * Must be called before the first call to draw(), and again if any of the above are rebound, or a different
    * shader is to be used.
    *
-   * @param shader  Should read vertex data from an SSBO with binding = 1, containing  a single array of 108 floats
+   * @param shader  Should read vertex data from an SSBO with binding = 1, containing a single array of 108 floats
    *                (coordinates in x1, y1, z1, x2, y2, z2... order). Should define a samplerCube uniform named
    *                "cubemap".
    */

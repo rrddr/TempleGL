@@ -52,6 +52,8 @@ class Model {
  private:
   struct Vertex {
     GLfloat position[3];
+    GLfloat tangent[3];
+    GLfloat bitangent[3];
     GLfloat uv[2];
   };
   struct DrawElementsIndirectCommand {

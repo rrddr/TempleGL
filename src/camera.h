@@ -31,6 +31,7 @@ class Camera {
                             config_.near_plane,
                             config_.far_plane);
   }
+  inline glm::vec3 getPosition() const { return state_.position; }
   inline void updateAspectRatio(float aspect_ratio) { config_.aspect_ratio = aspect_ratio; }
 
   enum MoveDirection { FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN };
