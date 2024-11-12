@@ -30,12 +30,13 @@ vec3 calculateSunlightContribution(vec3 diffuse_color, vec3 N, vec3 V, float spe
 
 void main() {
     // Retrieve values from texture array
-    vec3 diffuse_color = texture(texture_array, vec3(fs_in.uv, float(fs_in.material_index * 3))).rgb;
+    vec3 raw_diffuse = texture(texture_array, vec3(fs_in.uv, float(fs_in.material_index * 3))).rgb;
     vec3 raw_normal = texture(texture_array, vec3(fs_in.uv, float(fs_in.material_index * 3 + 1))).xyz;
     float raw_specular = texture(texture_array, vec3(fs_in.uv, float(fs_in.material_index * 3 + 2))).r;
 
     // Compute intermediates
-    float specular_factor = smoothstep(0.0, 1.0, raw_specular);
+    vec3 diffuse_color = pow(raw_diffuse, vec3(2.2));
+    float specular_factor = raw_specular; // TODO: tweak
     vec3 N = fs_in.TBN * normalize(raw_normal * 2.0 - 1.0);
     vec3 V = normalize((camera.position - fs_in.position).xyz);
 

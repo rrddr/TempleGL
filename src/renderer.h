@@ -53,7 +53,7 @@ class Renderer : public Initializer<RendererConfig> {
     glm::vec4 color;
   };
   static constexpr DirectionalLight sunlight {
-    {-0.4f, 0.8f, -1.0f, 1.0f},
+    {-0.4f, 0.8f, -1.0f, 0.0f},
     {1.0f, 1.0f, 1.0f, 1.0f},
   };
 

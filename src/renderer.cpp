@@ -58,6 +58,7 @@ void Renderer::renderSetup() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+  glEnable(GL_FRAMEBUFFER_SRGB);
 
   state_.first_time_receiving_mouse_input = true;
   state_.current_time = static_cast<float>(glfwGetTime());
