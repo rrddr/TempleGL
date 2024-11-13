@@ -46,7 +46,13 @@ class Renderer : public Initializer<RendererConfig> {
   std::unique_ptr<Skybox> skybox_;
   std::unique_ptr<ShaderProgram> basic_shader_;
   std::unique_ptr<ShaderProgram> skybox_shader_;
+  std::unique_ptr<ShaderProgram> screenspace_shader_;
   wrap::VertexArray vao_ {};
+
+  /// TEMP SCREENSPACE STUFF
+  wrap::Texture color_attachment_;
+  wrap::Renderbuffer depth_attachment_;
+  wrap::Framebuffer framebuffer_;
 
   struct DirectionalLight {
     glm::vec4 origin;

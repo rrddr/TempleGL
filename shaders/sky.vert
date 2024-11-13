@@ -10,7 +10,7 @@ layout (binding = 0, std140) uniform matrix_ubo {
 };
 
 out VS_OUT {
-    smooth vec3 model_space_position;
+    vec3 model_space_position;
 } vs_out;
 
 vec3 getPosition(int index);

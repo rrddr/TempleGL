@@ -58,7 +58,7 @@ void Renderer::renderSetup() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-  glEnable(GL_FRAMEBUFFER_SRGB);
+//  glEnable(GL_FRAMEBUFFER_SRGB);
 
   state_.first_time_receiving_mouse_input = true;
   state_.current_time = static_cast<float>(glfwGetTime());
@@ -83,11 +83,14 @@ void Renderer::renderSetup() {
   };
   skybox_ = std::make_unique<Skybox>(skybox_paths);
   basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                      .vertex(config_.shader_path + "/basic.vert")
-                                                      .fragment(config_.shader_path + "/basic.frag"));
+                                                      .vertex(config_.shader_path + "/blinn_phong.vert")
+                                                      .fragment(config_.shader_path + "/blinn_phong.frag"));
   skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                        .vertex(config_.shader_path + "/sky.vert")
                                                        .fragment(config_.shader_path + "/sky.frag"));
+  screenspace_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
+                                                            .vertex(config_.shader_path + "/screenspace.vert")
+                                                            .fragment(config_.shader_path + "/screenspace.frag"));
 
   glCreateBuffers(1, &state_.matrix_buffer.id);
   glNamedBufferStorage(state_.matrix_buffer.id,
@@ -121,6 +124,35 @@ void Renderer::renderSetup() {
 
   temple_model_->drawSetup(basic_shader_);
   skybox_->drawSetup(skybox_shader_);
+
+  /// TEMP SCREENSPACE STUFF
+  glCreateTextures(GL_TEXTURE_2D, 1, &color_attachment_.id);
+  glTextureStorage2D(color_attachment_.id,
+                     1,
+                     GL_RGBA16F,
+                     config_.window_width,
+                     config_.window_height);
+  glCreateRenderbuffers(1, &depth_attachment_.id);
+  glNamedRenderbufferStorage(depth_attachment_.id,
+                             GL_DEPTH_COMPONENT32F,
+                             config_.window_width,
+                             config_.window_height);
+  glTextureParameteri(color_attachment_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTextureParameteri(color_attachment_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glCreateFramebuffers(1, &framebuffer_.id);
+  glNamedFramebufferTexture(framebuffer_.id, GL_COLOR_ATTACHMENT0, color_attachment_.id, 0);
+  glNamedFramebufferRenderbuffer(framebuffer_.id, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_attachment_.id);
+
+  if (glCheckNamedFramebufferStatus(framebuffer_.id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer_.id, GL_DEBUG_SEVERITY_HIGH, -1,
+                         "(Renderer::renderSetup): Framebuffer is incomplete!");
+  }
+
+
+  screenspace_shader_->use();
+  screenspace_shader_->setInt("rendered_scene", 2);
+  glBindTextureUnit(2, color_attachment_.id);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
                        "Renderer::renderSetup() successful.");
@@ -163,12 +195,18 @@ void Renderer::processKeyboardInput() {
 }
 
 void Renderer::render() {
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_.id);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   basic_shader_->use();
   temple_model_->draw();
   skybox_shader_->use();
   skybox_->draw();
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glDisable(GL_DEPTH_TEST);
+  screenspace_shader_->use();
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::renderTerminate() {

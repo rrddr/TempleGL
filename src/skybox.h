@@ -41,7 +41,7 @@ class Skybox {
   wrap::Texture cube_map_ {};
   wrap::Buffer vertex_buffer_ {};
   static constexpr GLsizei FACE_SIZE {512};
-  static constexpr GLfloat VERTICES[] {
+  static constexpr GLfloat VERTICES[108] {
       -0.5f, -0.5f, -0.5f,
       0.5f, -0.5f, -0.5f,
       0.5f, 0.5f, -0.5f,
