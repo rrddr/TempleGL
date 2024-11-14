@@ -7,9 +7,9 @@
 #include <format>
 #include <memory>
 
-void help::StbiDeleter::operator()(unsigned char* data) {
-  stbi_image_free(data);
-}
+struct StbiDeleter {
+  void operator()(unsigned char* data) { stbi_image_free(data); }
+};
 
 void help::fill3DTextureLayer(const std::string& path,
                               const wrap::Texture& texture,

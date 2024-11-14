@@ -9,10 +9,6 @@
  * Collects helper functions that deal with the stb_image library, which we use for loading textures from files.
  */
 namespace help {
-  struct StbiDeleter {
-    void operator()(unsigned char* data);
-  };
-
   /**
    * Loads an image file and passes it to glTextureSubImage3D.
    *
