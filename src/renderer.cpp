@@ -91,38 +91,9 @@ void Renderer::renderSetup() {
                                                       .vertex(config_.shader_path + "/image_space.vert")
                                                       .fragment(config_.shader_path + "/image_space.frag"));
 
-  glCreateBuffers(1, &state_.matrix_buffer.id);
-  glNamedBufferStorage(state_.matrix_buffer.id,
-                       2 * sizeof(glm::mat4),
-                       nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-  glNamedBufferSubData(state_.matrix_buffer.id,
-                       0,
-                       sizeof(glm::mat4),
-                       glm::value_ptr(camera_->getProjectionMatrix()));
-  glNamedBufferSubData(state_.matrix_buffer.id,
-                       sizeof(glm::mat4),
-                       sizeof(glm::mat4),
-                       glm::value_ptr(camera_->getViewMatrix()));
-  glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_UBO_BINDING, state_.matrix_buffer.id);
-
-  glCreateBuffers(1, &state_.light_buffer.id);
-  glNamedBufferStorage(state_.light_buffer.id,
-                       sizeof(glm::vec4) + sizeof(DirectionalLight),
-                       nullptr,
-                       GL_DYNAMIC_STORAGE_BIT);
-  glNamedBufferSubData(state_.light_buffer.id,
-                       0,
-                       sizeof(glm::vec4),
-                       glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
-  glNamedBufferSubData(state_.light_buffer.id,
-                       sizeof(glm::vec4),
-                       sizeof(DirectionalLight),
-                       &SUNLIGHT);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHT_SSBO_BINDING, state_.light_buffer.id);
-
   glCreateFramebuffers(1, &fbo_.id);
   createFramebufferAttachments();
+  initializeUniformBuffers();
 
   temple_model_->drawSetup(TEMPLE_VERTEX_SSBO_BINDING, TEMPLE_TEX_ARRAY_TEX_UNIT);
   skybox_->drawSetup(SKYBOX_VERTEX_SSBO_BINDING, SKYBOX_CUBEMAP_TEX_UNIT);
@@ -220,23 +191,57 @@ void Renderer::scrollCallback(float y_offset) {
   camera_->processMouseScroll(y_offset, state_.delta_time);
 }
 
+void Renderer::initializeUniformBuffers() {
+  glCreateBuffers(1, &state_.matrix_buffer.id);
+  glNamedBufferStorage(state_.matrix_buffer.id,
+                       2 * sizeof(glm::mat4),
+                       nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferSubData(state_.matrix_buffer.id,
+                       0,
+                       sizeof(glm::mat4),
+                       glm::value_ptr(camera_->getProjectionMatrix()));
+  glNamedBufferSubData(state_.matrix_buffer.id,
+                       sizeof(glm::mat4),
+                       sizeof(glm::mat4),
+                       glm::value_ptr(camera_->getViewMatrix()));
+  glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_UBO_BINDING, state_.matrix_buffer.id);
+
+  glCreateBuffers(1, &state_.light_buffer.id);
+  glNamedBufferStorage(state_.light_buffer.id,
+                       sizeof(glm::vec4) + sizeof(DirectionalLight),
+                       nullptr,
+                       GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferSubData(state_.light_buffer.id,
+                       0,
+                       sizeof(glm::vec4),
+                       glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
+  glNamedBufferSubData(state_.light_buffer.id,
+                       sizeof(glm::vec4),
+                       sizeof(DirectionalLight),
+                       &SUNLIGHT);
+  glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_UBO_BINDING, state_.light_buffer.id);
+}
+
 void Renderer::createFramebufferAttachments() {
   // Attachments must be recreated if window dimensions change
-  if (fbo_color_attachment_.id) { glDeleteTextures(1, &fbo_color_attachment_.id); }
-  if (fbo_depth_attachment_.id) { glDeleteRenderbuffers(1, &fbo_depth_attachment_.id); }
+  if (fbo_color_attachment_.id) glDeleteTextures(1, &fbo_color_attachment_.id);
+  if (fbo_depth_attachment_.id) glDeleteRenderbuffers(1, &fbo_depth_attachment_.id);
+
   glCreateTextures(GL_TEXTURE_2D, 1, &fbo_color_attachment_.id);
   glTextureStorage2D(fbo_color_attachment_.id,
                      1,
                      GL_RGBA16F,
                      config_.window_width,
                      config_.window_height);
+  glTextureParameteri(fbo_color_attachment_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTextureParameteri(fbo_color_attachment_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
   glCreateRenderbuffers(1, &fbo_depth_attachment_.id);
   glNamedRenderbufferStorage(fbo_depth_attachment_.id,
                              GL_DEPTH_COMPONENT32F,
                              config_.window_width,
                              config_.window_height);
-  glTextureParameteri(fbo_color_attachment_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(fbo_color_attachment_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   glNamedFramebufferTexture(fbo_.id, GL_COLOR_ATTACHMENT0, fbo_color_attachment_.id, 0);
   glNamedFramebufferRenderbuffer(fbo_.id, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo_depth_attachment_.id);

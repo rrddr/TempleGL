@@ -14,7 +14,7 @@ struct DirectionalLight {
     vec4 origin; // pointing toward "source"
     vec4 color;
 };
-layout (binding = 2, std430) readonly buffer light_ssbo {
+layout (binding = 1, std140) uniform light_ubo {
     CameraParameters camera;
     DirectionalLight sunlight;
 };

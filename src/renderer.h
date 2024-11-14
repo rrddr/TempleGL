@@ -66,6 +66,7 @@ class Renderer : public Initializer<RendererConfig> {
   void scrollCallback(float y_offset) override;
 
   /// Additional helper methods
+  void initializeUniformBuffers();
   void createFramebufferAttachments();
   static void checkFramebufferErrors(const wrap::Framebuffer& framebuffer);
 
@@ -83,7 +84,7 @@ class Renderer : public Initializer<RendererConfig> {
   static constexpr GLuint IMAGE_SCENE_TEX_UNIT {2};
   static constexpr GLuint TEMPLE_VERTEX_SSBO_BINDING {0};
   static constexpr GLuint SKYBOX_VERTEX_SSBO_BINDING {1};
-  static constexpr GLuint LIGHT_SSBO_BINDING {2};
   static constexpr GLuint MATRIX_UBO_BINDING {0};
+  static constexpr GLuint LIGHT_UBO_BINDING {1};
 };
 #endif //TEMPLEGL_SRC_RENDERER_H_
