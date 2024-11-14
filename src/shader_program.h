@@ -42,53 +42,7 @@ class ShaderProgram {
   explicit ShaderProgram(const Stages& stages);
   ~ShaderProgram() { glDeleteProgram(program_id); }
 
-  /// Utility methods
   inline void use() const { glUseProgram(program_id); }
-  inline void setBool(const std::string& name, GLboolean value) const {
-    glProgramUniform1i(program_id, glGetUniformLocation(program_id, name.c_str()), static_cast<GLint>(value));
-  }
-  inline void setInt(const std::string& name, GLint value) const {
-    glProgramUniform1i(program_id, glGetUniformLocation(program_id, name.c_str()), value);
-  }
-  inline void setUnsignedInt(const std::string& name, GLuint value) const {
-    glProgramUniform1ui(program_id, glGetUniformLocation(program_id, name.c_str()), value);
-  }
-  inline void setFloat(const std::string& name, GLfloat value) const {
-    glProgramUniform1f(program_id, glGetUniformLocation(program_id, name.c_str()), value);
-  }
-  inline void setDouble(const std::string& name, GLdouble value) const {
-    glProgramUniform1d(program_id, glGetUniformLocation(program_id, name.c_str()), value);
-  }
-  inline void setVec2(const std::string& name, const glm::vec2& value) const {
-    glProgramUniform2fv(program_id, glGetUniformLocation(program_id, name.c_str()), 1, glm::value_ptr(value));
-  }
-  inline void setVec2(const std::string& name, GLfloat x, GLfloat y) const {
-    glProgramUniform2f(program_id, glGetUniformLocation(program_id, name.c_str()), x, y);
-  }
-  inline void setVec3(const std::string& name, const glm::vec3& value) const {
-    glProgramUniform3fv(program_id, glGetUniformLocation(program_id, name.c_str()), 1, glm::value_ptr(value));
-  }
-  inline void setVec3(const std::string& name, GLfloat x, GLfloat y, GLfloat z) const {
-    glProgramUniform3f(program_id, glGetUniformLocation(program_id, name.c_str()), x, y, z);
-  }
-  inline void setVec4(const std::string& name, const glm::vec4& value) const {
-    glProgramUniform4fv(program_id, glGetUniformLocation(program_id, name.c_str()), 1, glm::value_ptr(value));
-  }
-  inline void setVec4(const std::string& name, GLfloat x, GLfloat y, GLfloat z, GLfloat w) const {
-    glProgramUniform4f(program_id, glGetUniformLocation(program_id, name.c_str()), x, y, z, w);
-  }
-  inline void setMat2(const std::string& name, const glm::mat2& mat) const {
-    glProgramUniformMatrix2fv(program_id, glGetUniformLocation(program_id, name.c_str()), 1, GL_FALSE,
-                              glm::value_ptr(mat));
-  }
-  inline void setMat3(const std::string& name, const glm::mat3& mat) const {
-    glProgramUniformMatrix3fv(program_id, glGetUniformLocation(program_id, name.c_str()), 1, GL_FALSE,
-                              glm::value_ptr(mat));
-  }
-  inline void setMat4(const std::string& name, const glm::mat4& mat) const {
-    glProgramUniformMatrix4fv(program_id, glGetUniformLocation(program_id, name.c_str()), 1, GL_FALSE,
-                              glm::value_ptr(mat));
-  }
 
  private:
   GLuint program_id;
