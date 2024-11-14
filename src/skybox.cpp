@@ -19,11 +19,8 @@ Skybox::Skybox(const std::vector<std::string>& paths) {
   glTextureParameteri(cube_map_.id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
-void Skybox::drawSetup(const std::unique_ptr<ShaderProgram>& shader,
-                       GLuint texture_unit_id,
-                       GLuint vertex_buffer_binding) const {
-  shader->use();
-  shader->setInt("cubemap", texture_unit_id);
-  glBindTextureUnit(texture_unit_id, cube_map_.id);
+void Skybox::drawSetup(GLuint vertex_buffer_binding,
+                       GLuint texture_binding) const {
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, vertex_buffer_binding, vertex_buffer_.id);
+  glBindTextureUnit(texture_binding, cube_map_.id);
 }

@@ -32,21 +32,20 @@ class Model {
   explicit Model(const std::string& obj_path);
 
   /**
-   * Binds GL_DRAW_INDIRECT_BUFFER, GL_ELEMENT_ARRAY_BUFFER and GL_SHADER_STORAGE_BUFFER at binding point 0.
-   * Binds texture array to Texture Unit 0 and sets the corresponding shader uniform.
-   * <p>
-   * Must be called before the first call to draw(), and again if any of the above are rebound, or a different
-   * shader is to be used.
-   *
-   * @param shader  Should read vertex data from an SSBO with binding = 0, containing an array of Vertex structs
-   *                matching the definition below. Should define a sampler2DArray uniform named "texture_array".
-   *                The vertex and material indices will be available as gl_VertexID and gl_BaseInstance respectively.
-   *                The diffuse texture for a given material is layer index*3 of texture_array (normal is *3+1,
-   *                specular is *3+2).
+   * Binds GL_DRAW_INDIRECT_BUFFER, GL_ELEMENT_ARRAY_BUFFER and GL_SHADER_STORAGE_BUFFER at vertex_buffer_binging.
+   * Binds texture_array_ to the texture unit specified by texture_binding.
    */
-  void drawSetup(const std::unique_ptr<ShaderProgram>& shader,
-                 GLuint texture_unit_id,
-                 GLuint vertex_buffer_binding) const;
+  void drawSetup(GLuint vertex_buffer_binding,
+                 GLuint texture_binding) const;
+  /**
+   * Draws the model. drawSetup() must have been called at least once before this method.
+   *
+   * @param shader  Should read vertex data from an SSBO containing an array of Vertex structs matching the definition
+   *                below. May define a sampler2DArray uniform. Bindings should equal the ones passed to drawSetup().
+   *                The vertex and material indices will be available as gl_VertexID and gl_BaseInstance respectively.
+   *                The diffuse texture for a given material is layer gl_BaseInstance*3 of the texture array
+   *                (normal is *3+1, specular is *3+2).
+   */
   inline void draw(const std::unique_ptr<ShaderProgram>& shader) const {
     shader->use();
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, num_draw_commands_, 0);

@@ -27,13 +27,10 @@ Model::Model(const std::string& obj_path) {
   createBuffers(scene->mMeshes, scene->mNumMeshes);
 }
 
-void Model::drawSetup(const std::unique_ptr<ShaderProgram>& shader,
-                      GLuint texture_unit_id,
-                      GLuint vertex_buffer_binding) const {
-  shader->use();
-  shader->setInt("texture_array", texture_unit_id);
-  glBindTextureUnit(texture_unit_id, texture_array_.id);
+void Model::drawSetup(GLuint vertex_buffer_binding,
+                      GLuint texture_binding) const {
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, vertex_buffer_binding, vertex_buffer_.id);
+  glBindTextureUnit(texture_binding, texture_array_.id);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_.id);
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw_command_buffer_.id);
 }

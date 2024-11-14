@@ -124,10 +124,8 @@ void Renderer::renderSetup() {
   glCreateFramebuffers(1, &fbo_.id);
   createFramebufferAttachments();
 
-  temple_model_->drawSetup(temple_shader_, TEMPLE_TEX_ARRAY_TEX_UNIT, TEMPLE_VERTEX_SSBO_BINDING);
-  skybox_->drawSetup(skybox_shader_, SKYBOX_CUBEMAP_TEX_UNIT, SKYBOX_VERTEX_SSBO_BINDING);
-  image_shader_->use();
-  image_shader_->setInt("rendered_scene", IMAGE_SCENE_TEX_UNIT);
+  temple_model_->drawSetup(TEMPLE_VERTEX_SSBO_BINDING, TEMPLE_TEX_ARRAY_TEX_UNIT);
+  skybox_->drawSetup(SKYBOX_VERTEX_SSBO_BINDING, SKYBOX_CUBEMAP_TEX_UNIT);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
                        "Renderer::renderSetup() successful.");

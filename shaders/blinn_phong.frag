@@ -19,7 +19,7 @@ layout (binding = 2, std430) readonly buffer light_ssbo {
     DirectionalLight sunlight;
 };
 
-uniform sampler2DArray texture_array;
+layout(binding = 0) uniform sampler2DArray texture_array;
 
 const float SPECULAR_EXPONENT = 16.0;
 const vec3 AMBIENT_LIGHT = vec3(0.3);

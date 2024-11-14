@@ -5,7 +5,7 @@ in VS_OUT {
     vec2 uv;
 } fs_in;
 
-uniform sampler2D rendered_scene;
+layout(binding = 2) uniform sampler2D rendered_scene;
 
 out vec4 frag_color;
 

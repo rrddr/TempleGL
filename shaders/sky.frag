@@ -4,7 +4,7 @@ in VS_OUT {
     vec3 model_space_position;
 } fs_in;
 
-uniform samplerCube cubemap;
+layout(binding = 1) uniform samplerCube cubemap;
 
 out vec4 frag_color;
 
