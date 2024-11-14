@@ -11,7 +11,11 @@ void help::StbiDeleter::operator()(unsigned char* data) {
   stbi_image_free(data);
 }
 
-void help::fill3DTextureLayer(const std::string& path, const wrap::Texture& texture, int layer, int width, int height) {
+void help::fill3DTextureLayer(const std::string& path,
+                              const wrap::Texture& texture,
+                              GLint layer,
+                              GLsizei width,
+                              GLsizei height) {
   int actual_width, actual_height, actual_num_components;
   auto data = std::unique_ptr<unsigned char, StbiDeleter>(stbi_load(path.c_str(),
                                                                     &actual_width,

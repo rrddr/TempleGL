@@ -32,8 +32,11 @@ class Skybox {
    *                (coordinates in x1, y1, z1, x2, y2, z2... order). Should define a samplerCube uniform named
    *                "cubemap".
    */
-  void drawSetup(const std::unique_ptr<ShaderProgram>& shader) const;
-  inline void draw() const {
+  void drawSetup(const std::unique_ptr<ShaderProgram>& shader,
+      GLuint texture_unit_id,
+      GLuint vertex_buffer_binding) const;
+  static inline void draw(const std::unique_ptr<ShaderProgram>& shader) {
+    shader->use();
     glDrawArrays(GL_TRIANGLES, 0, 36);
   }
 

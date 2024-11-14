@@ -1,6 +1,6 @@
 //VERTEX_SHADER
 #version 460 core
-layout (binding = 1, std430) readonly buffer vertex_ubo {
+layout (binding = 1, std430) readonly buffer vertex_ssbo {
     float data[108]; // This should match the hardcoded data in src/skybox.h
 };
 

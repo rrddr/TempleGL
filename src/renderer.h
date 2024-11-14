@@ -44,24 +44,13 @@ class Renderer : public Initializer<RendererConfig> {
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<Model> temple_model_;
   std::unique_ptr<Skybox> skybox_;
-  std::unique_ptr<ShaderProgram> basic_shader_;
+  std::unique_ptr<ShaderProgram> temple_shader_;
   std::unique_ptr<ShaderProgram> skybox_shader_;
-  std::unique_ptr<ShaderProgram> screenspace_shader_;
+  std::unique_ptr<ShaderProgram> image_shader_;
+  wrap::Texture fbo_color_attachment_;
+  wrap::Renderbuffer fbo_depth_attachment_;
+  wrap::Framebuffer fbo_;
   wrap::VertexArray vao_ {};
-
-  /// TEMP SCREENSPACE STUFF
-  wrap::Texture color_attachment_;
-  wrap::Renderbuffer depth_attachment_;
-  wrap::Framebuffer framebuffer_;
-
-  struct DirectionalLight {
-    glm::vec4 origin;
-    glm::vec4 color;
-  };
-  static constexpr DirectionalLight sunlight {
-    {-0.4f, 0.8f, -1.0f, 0.0f},
-    {1.0f, 1.0f, 1.0f, 1.0f},
-  };
 
   /// Program stages
   void loadConfigYaml() override;
@@ -75,5 +64,26 @@ class Renderer : public Initializer<RendererConfig> {
   void framebufferSizeCallback(int width, int height) override;
   void cursorPosCallback(float x_pos, float y_pos) override;
   void scrollCallback(float y_offset) override;
+
+  /// Additional helper methods
+  void createFramebufferAttachments();
+  static void checkFramebufferErrors(const wrap::Framebuffer& framebuffer);
+
+  /// Hardcoded shader parameters
+  struct DirectionalLight {
+    glm::vec4 origin;
+    glm::vec4 color;
+  };
+  static constexpr DirectionalLight SUNLIGHT {
+      {-0.4f, 0.8f, -1.0f, 0.0f},
+      {1.0f, 1.0f, 1.0f, 1.0f},
+  };
+  static constexpr GLuint TEMPLE_TEX_ARRAY_TEX_UNIT {0};
+  static constexpr GLuint SKYBOX_CUBEMAP_TEX_UNIT {1};
+  static constexpr GLuint IMAGE_SCENE_TEX_UNIT {2};
+  static constexpr GLuint TEMPLE_VERTEX_SSBO_BINDING {0};
+  static constexpr GLuint SKYBOX_VERTEX_SSBO_BINDING {1};
+  static constexpr GLuint LIGHT_SSBO_BINDING {2};
+  static constexpr GLuint MATRIX_UBO_BINDING {0};
 };
 #endif //TEMPLEGL_SRC_RENDERER_H_

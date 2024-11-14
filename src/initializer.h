@@ -30,8 +30,9 @@ class Initializer {
 
  protected:
   CONFIG_TYPE config_ {};
-  GLFWwindow* window_ {};        // raw pointer, as destruction is handled by glfwTerminate()
-  bool lock_gl_viewport {false}; // prevent unwanted calls to glViewport while rendering to a non-default framebuffer
+  GLFWwindow* window_ {};             // raw pointer, as destruction is handled by glfwTerminate()
+  bool lock_gl_viewport_ {false};     // prevent unwanted calls to glViewport while rendering to non-default framebuffer
+  bool pending_gl_viewport_ {false};  // set this variable to queue a glViewport call while lock_gl_viewport_ is true
 
   /// Program stages
   virtual void loadConfigYaml();        // Should initialize all fields in CONFIG_TYPE

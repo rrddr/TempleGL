@@ -44,8 +44,11 @@ class Model {
    *                The diffuse texture for a given material is layer index*3 of texture_array (normal is *3+1,
    *                specular is *3+2).
    */
-  void drawSetup(const std::unique_ptr<ShaderProgram>& shader) const;
-  inline void draw() const {
+  void drawSetup(const std::unique_ptr<ShaderProgram>& shader,
+                 GLuint texture_unit_id,
+                 GLuint vertex_buffer_binding) const;
+  inline void draw(const std::unique_ptr<ShaderProgram>& shader) const {
+    shader->use();
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, num_draw_commands_, 0);
   }
 
@@ -61,7 +64,7 @@ class Model {
     GLuint instance_count;
     GLuint first_vertex;
     GLint base_vertex;
-    GLuint base_instance;   // We don't use instancing, so this is re-purposed as the material index of the mesh
+    GLuint base_instance;   // We don't use instancing, so this is re-purposed as material index of the mesh
   };
 
   std::string source_dir_;
@@ -72,11 +75,11 @@ class Model {
   wrap::Buffer draw_command_buffer_ {};
   wrap::Texture texture_array_ {};
 
-  static constexpr GLsizei TEX_SIZE {128};
-
   template<typename T>
   static void createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector);
   void createBuffers(aiMesh** meshes, unsigned int num_meshes);
   void createTextureArray(aiMaterial** materials, unsigned int num_materials);
+
+  static constexpr GLsizei TEX_SIZE {128};
 };
 #endif //TEMPLEGL_SRC_MODEL_H_

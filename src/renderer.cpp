@@ -6,10 +6,10 @@
 
 #include <iostream>
 #include <vector>
+#include <format>
 
 void Renderer::loadConfigYaml() {
   Initializer::loadConfigYaml();
-  // We accept having to load the file a second time, as this is cleaner than any alternative
   YAML::Node config_yaml;
   try {
     config_yaml = YAML::LoadFile("../config.yaml");
@@ -58,7 +58,6 @@ void Renderer::renderSetup() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-//  glEnable(GL_FRAMEBUFFER_SRGB);
 
   state_.first_time_receiving_mouse_input = true;
   state_.current_time = static_cast<float>(glfwGetTime());
@@ -82,15 +81,15 @@ void Renderer::renderSetup() {
       config_.model_path + "/skybox/nz.png"
   };
   skybox_ = std::make_unique<Skybox>(skybox_paths);
-  basic_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
+  temple_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                       .vertex(config_.shader_path + "/blinn_phong.vert")
                                                       .fragment(config_.shader_path + "/blinn_phong.frag"));
   skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                        .vertex(config_.shader_path + "/sky.vert")
                                                        .fragment(config_.shader_path + "/sky.frag"));
-  screenspace_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                            .vertex(config_.shader_path + "/screenspace.vert")
-                                                            .fragment(config_.shader_path + "/screenspace.frag"));
+  image_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
+                                                      .vertex(config_.shader_path + "/image_space.vert")
+                                                      .fragment(config_.shader_path + "/image_space.frag"));
 
   glCreateBuffers(1, &state_.matrix_buffer.id);
   glNamedBufferStorage(state_.matrix_buffer.id,
@@ -105,7 +104,7 @@ void Renderer::renderSetup() {
                        sizeof(glm::mat4),
                        sizeof(glm::mat4),
                        glm::value_ptr(camera_->getViewMatrix()));
-  glBindBufferBase(GL_UNIFORM_BUFFER, 0, state_.matrix_buffer.id);
+  glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_UBO_BINDING, state_.matrix_buffer.id);
 
   glCreateBuffers(1, &state_.light_buffer.id);
   glNamedBufferStorage(state_.light_buffer.id,
@@ -119,40 +118,16 @@ void Renderer::renderSetup() {
   glNamedBufferSubData(state_.light_buffer.id,
                        sizeof(glm::vec4),
                        sizeof(DirectionalLight),
-                       &sunlight);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, state_.light_buffer.id);
+                       &SUNLIGHT);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHT_SSBO_BINDING, state_.light_buffer.id);
 
-  temple_model_->drawSetup(basic_shader_);
-  skybox_->drawSetup(skybox_shader_);
+  glCreateFramebuffers(1, &fbo_.id);
+  createFramebufferAttachments();
 
-  /// TEMP SCREENSPACE STUFF
-  glCreateTextures(GL_TEXTURE_2D, 1, &color_attachment_.id);
-  glTextureStorage2D(color_attachment_.id,
-                     1,
-                     GL_RGBA16F,
-                     config_.window_width,
-                     config_.window_height);
-  glCreateRenderbuffers(1, &depth_attachment_.id);
-  glNamedRenderbufferStorage(depth_attachment_.id,
-                             GL_DEPTH_COMPONENT32F,
-                             config_.window_width,
-                             config_.window_height);
-  glTextureParameteri(color_attachment_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(color_attachment_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  glCreateFramebuffers(1, &framebuffer_.id);
-  glNamedFramebufferTexture(framebuffer_.id, GL_COLOR_ATTACHMENT0, color_attachment_.id, 0);
-  glNamedFramebufferRenderbuffer(framebuffer_.id, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_attachment_.id);
-
-  if (glCheckNamedFramebufferStatus(framebuffer_.id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer_.id, GL_DEBUG_SEVERITY_HIGH, -1,
-                         "(Renderer::renderSetup): Framebuffer is incomplete!");
-  }
-
-
-  screenspace_shader_->use();
-  screenspace_shader_->setInt("rendered_scene", 2);
-  glBindTextureUnit(2, color_attachment_.id);
+  temple_model_->drawSetup(temple_shader_, TEMPLE_TEX_ARRAY_TEX_UNIT, TEMPLE_VERTEX_SSBO_BINDING);
+  skybox_->drawSetup(skybox_shader_, SKYBOX_CUBEMAP_TEX_UNIT, SKYBOX_VERTEX_SSBO_BINDING);
+  image_shader_->use();
+  image_shader_->setInt("rendered_scene", IMAGE_SCENE_TEX_UNIT);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
                        "Renderer::renderSetup() successful.");
@@ -195,16 +170,24 @@ void Renderer::processKeyboardInput() {
 }
 
 void Renderer::render() {
-  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_.id);
+  /// Render scene to framebuffer
+  lock_gl_viewport_ = true;
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo_.id);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  basic_shader_->use();
-  temple_model_->draw();
-  skybox_shader_->use();
-  skybox_->draw();
+  temple_model_->draw(temple_shader_);
+  skybox_->draw(skybox_shader_);
+
+  /// Post-processing and render to screen
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  lock_gl_viewport_ = false;
+  if (pending_gl_viewport_) {
+    glViewport(0, 0, config_.window_width, config_.window_height);
+    createFramebufferAttachments();
+    pending_gl_viewport_ = false;
+  }
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  image_shader_->use();
   glDisable(GL_DEPTH_TEST);
-  screenspace_shader_->use();
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glEnable(GL_DEPTH_TEST);
 }
@@ -216,6 +199,7 @@ void Renderer::renderTerminate() {
 
 void Renderer::framebufferSizeCallback(int width, int height) {
   Initializer::framebufferSizeCallback(width, height);
+  if (!lock_gl_viewport_) { createFramebufferAttachments(); }
   camera_->updateAspectRatio(static_cast<float>(width) / static_cast<float>(height));
   glNamedBufferSubData(state_.matrix_buffer.id,
                        0,
@@ -236,4 +220,75 @@ void Renderer::cursorPosCallback(float x_pos, float y_pos) {
 
 void Renderer::scrollCallback(float y_offset) {
   camera_->processMouseScroll(y_offset, state_.delta_time);
+}
+
+void Renderer::createFramebufferAttachments() {
+  // Attachments must be recreated if window dimensions change
+  if (fbo_color_attachment_.id) { glDeleteTextures(1, &fbo_color_attachment_.id); }
+  if (fbo_depth_attachment_.id) { glDeleteRenderbuffers(1, &fbo_depth_attachment_.id); }
+  glCreateTextures(GL_TEXTURE_2D, 1, &fbo_color_attachment_.id);
+  glTextureStorage2D(fbo_color_attachment_.id,
+                     1,
+                     GL_RGBA16F,
+                     config_.window_width,
+                     config_.window_height);
+  glCreateRenderbuffers(1, &fbo_depth_attachment_.id);
+  glNamedRenderbufferStorage(fbo_depth_attachment_.id,
+                             GL_DEPTH_COMPONENT32F,
+                             config_.window_width,
+                             config_.window_height);
+  glTextureParameteri(fbo_color_attachment_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTextureParameteri(fbo_color_attachment_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glNamedFramebufferTexture(fbo_.id, GL_COLOR_ATTACHMENT0, fbo_color_attachment_.id, 0);
+  glNamedFramebufferRenderbuffer(fbo_.id, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo_depth_attachment_.id);
+  checkFramebufferErrors(fbo_);
+
+  glBindTextureUnit(IMAGE_SCENE_TEX_UNIT, fbo_color_attachment_.id);
+}
+
+void Renderer::checkFramebufferErrors(const wrap::Framebuffer& framebuffer) {
+  GLenum status = glCheckNamedFramebufferStatus(framebuffer.id, GL_FRAMEBUFFER);
+  switch (status) {
+    case GL_FRAMEBUFFER_COMPLETE:
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, framebuffer.id,
+                           GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+                           "(Renderer::checkFramebufferErrors): Framebuffer is complete.");
+      break;
+    case GL_FRAMEBUFFER_UNDEFINED:
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+                           "(Renderer::checkFramebufferErrors): Framebuffer undefined.");
+      break;
+    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+                           "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Incomplete Attachment. "
+                           "All attachments must be attachment complete (empty attachments are complete by default).");
+      break;
+    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+                           "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Missing Attachment. "
+                           "At least one image must be attached.");
+      break;
+    case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+                           "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Multisample mismatch. "
+                           "All attached images must have the same number of multisample samples, and use the same "
+                           "fixed sample layout setting.");
+      break;
+    case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+                           "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Layered mismatch. "
+                           "Either all or none of the attached images must be layered attachments.");
+      break;
+    case GL_FRAMEBUFFER_UNSUPPORTED:
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+                           "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Unsupported combination of "
+                           "attached image formats.");
+      break;
+    default:
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+                           std::format("(Renderer::checkFramebufferErrors): Unrecognized glCheckFramebufferStatus() "
+                                       "return value {}", status).c_str());
+      break;
+  }
 }

@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-template <typename T>
+template<typename T>
 void Initializer<T>::run() {
   loadConfigYaml();
   init();
@@ -23,7 +23,7 @@ void Initializer<T>::run() {
   glfwTerminate();
 }
 
-template <typename T>
+template<typename T>
 void Initializer<T>::loadConfigYaml() {
   YAML::Node config_yaml;
   try {
@@ -49,7 +49,7 @@ void Initializer<T>::loadConfigYaml() {
     else if (debug_level_str == "high") { config_.debug_level = HIGH; }
     else {
       std::cerr << "WARNING (Initializer::loadConfigYaml): invalid setting in config.yaml, "
-                << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'."  << std::endl;
+                << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'." << std::endl;
       config_.debug_level = ALL;
     }
   }
@@ -59,7 +59,7 @@ void Initializer<T>::loadConfigYaml() {
   }
 }
 
-template <typename T>
+template<typename T>
 void Initializer<T>::init() {
   /// Initialize GLFW
   glfwSetErrorCallback(glfwErrorCallback);
@@ -129,18 +129,22 @@ void Initializer<T>::init() {
                        "Initializer::init() successful.");
 }
 
-template <typename T>
+template<typename T>
 void Initializer<T>::processKeyboardInput() {
   if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window_, true);
   }
 }
 
-template <typename T>
+template<typename T>
 void Initializer<T>::framebufferSizeCallback(int width, int height) {
   config_.window_width = width;
   config_.window_height = height;
-  if (!lock_gl_viewport) glViewport(0, 0, width, height);
+  if (!lock_gl_viewport_) {
+    glViewport(0, 0, width, height);
+  } else {
+    pending_gl_viewport_ = true;
+  }
 }
 
 template<typename T>
@@ -148,9 +152,9 @@ void Initializer<T>::glfwErrorCallback(int error_code, const char* description) 
   std::cerr << "GLFW ERROR (" << error_code << "): " << description << std::endl;
 }
 
-template <typename T>
+template<typename T>
 void APIENTRY Initializer<T>::debugMessageCallback(GLenum source, GLenum type, unsigned int id, GLenum severity,
-                                                GLsizei length, const char* message, const void* user_param) {
+                                                   GLsizei length, const char* message, const void* user_param) {
   std::cout << "Debug message (" << id << ")";
   std::cout << " | Source: ";
   switch (source) {

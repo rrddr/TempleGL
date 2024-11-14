@@ -9,10 +9,6 @@
  * Collects helper functions that deal with the stb_image library, which we use for loading textures from files.
  */
 namespace help {
-  /**
-   * stbi_load() returns a raw pointer which must be deleted with stbi_image_free(). To adhere to RAII, we create an
-   * std::unique_ptr instead, with this custom deleter.
-   */
   struct StbiDeleter {
     void operator()(unsigned char* data);
   };
@@ -27,6 +23,10 @@ namespace help {
    * @param width   The width of the texture in pixels.
    * @param height  The height of the texture in pixels.
    */
-  void fill3DTextureLayer(const std::string& path, const wrap::Texture& texture, int layer, int width, int height);
+  void fill3DTextureLayer(const std::string& path,
+                          const wrap::Texture& texture,
+                          GLint layer,
+                          GLsizei width,
+                          GLsizei height);
 }
 #endif //TEMPLEGL_SRC_STBI_HELPERS_H_
