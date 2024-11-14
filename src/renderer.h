@@ -47,9 +47,9 @@ class Renderer : public Initializer<RendererConfig> {
   std::unique_ptr<ShaderProgram> temple_shader_;
   std::unique_ptr<ShaderProgram> skybox_shader_;
   std::unique_ptr<ShaderProgram> image_shader_;
-  wrap::Texture fbo_color_attachment_;
-  wrap::Renderbuffer fbo_depth_attachment_;
-  wrap::Framebuffer fbo_;
+  wrap::Texture fbo_color_attachment_ {};
+  wrap::Renderbuffer fbo_depth_attachment_ {};
+  wrap::Framebuffer fbo_ {};
   wrap::VertexArray vao_ {};
 
   /// Program stages

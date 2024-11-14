@@ -84,21 +84,17 @@ void Initializer<T>::init() {
   glfwSetWindowPos(window_, config_.window_initial_x_pos, config_.window_initial_y_pos);
 
   /// Register GLFW callbacks
-  // WindowUserPointer allows us to reference this class instance from static callback functions
   glfwSetWindowUserPointer(window_, reinterpret_cast<void*>(this));
-  auto staticFramebufferSizeCallback = [](GLFWwindow* w, int width, int height) {
+  glfwSetFramebufferSizeCallback(window_, [](GLFWwindow* w, int width, int height) {
     reinterpret_cast<Initializer*>(glfwGetWindowUserPointer(w))->framebufferSizeCallback(width, height);
-  };
-  auto staticCursorPosCallback = [](GLFWwindow* w, double x, double y) {
+  });
+  glfwSetCursorPosCallback(window_, [](GLFWwindow* w, double x, double y) {
     reinterpret_cast<Initializer*>(glfwGetWindowUserPointer(w))->cursorPosCallback(static_cast<float>(x),
                                                                                    static_cast<float>(y));
-  };
-  auto staticScrollCallback = [](GLFWwindow* w, double x, double y) {
+  });
+  glfwSetScrollCallback(window_, [](GLFWwindow* w, double x, double y) {
     reinterpret_cast<Initializer*>(glfwGetWindowUserPointer(w))->scrollCallback(static_cast<float>(y));
-  };
-  glfwSetFramebufferSizeCallback(window_, staticFramebufferSizeCallback);
-  glfwSetCursorPosCallback(window_, staticCursorPosCallback);
-  glfwSetScrollCallback(window_, staticScrollCallback);
+  });
 
   /// Initialize GLAD
   if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
@@ -177,7 +173,7 @@ void APIENTRY Initializer<T>::debugMessageCallback(GLenum source, GLenum type, u
       std::cout << "Other";
       break;
     default:
-      std::cout << "Unrecognized GLenum value " << source;
+      std::cout << "Unrecognized GLenum value" << source;
       break;
   }
   std::cout << " | Type: ";
@@ -210,7 +206,7 @@ void APIENTRY Initializer<T>::debugMessageCallback(GLenum source, GLenum type, u
       std::cout << "Other";
       break;
     default:
-      std::cout << "Unrecognized GLenum value " << type;
+      std::cout << "Unrecognized GLenum value" << type;
       break;
   }
   std::cout << " | Severity: ";
@@ -228,7 +224,7 @@ void APIENTRY Initializer<T>::debugMessageCallback(GLenum source, GLenum type, u
       std::cout << "Notification";
       break;
     default:
-      std::cout << "Unrecognized GLenum value " << severity;
+      std::cout << "Unrecognized GLenum value" << severity;
       break;
   }
   std::cout << std::endl << "Message: " << message << std::endl << std::endl;
