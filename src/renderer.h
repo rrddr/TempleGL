@@ -79,9 +79,9 @@ class Renderer : public Initializer<RendererConfig> {
       {-0.4f, 0.8f, -1.0f, 0.0f},
       {1.0f, 1.0f, 1.0f, 1.0f},
   };
-  static constexpr GLuint TEMPLE_TEX_ARRAY_TEX_UNIT {0};
-  static constexpr GLuint SKYBOX_CUBEMAP_TEX_UNIT {1};
-  static constexpr GLuint IMAGE_SCENE_TEX_UNIT {2};
+  static constexpr GLuint TEMPLE_TEXTURE_ARRAY_BINDING {0};
+  static constexpr GLuint SKYBOX_CUBE_MAP_BINDING {1};
+  static constexpr GLuint IMAGE_SCENE_TEXTURE_BINDING {2};
   static constexpr GLuint TEMPLE_VERTEX_SSBO_BINDING {0};
   static constexpr GLuint SKYBOX_VERTEX_SSBO_BINDING {1};
   static constexpr GLuint MATRIX_UBO_BINDING {0};

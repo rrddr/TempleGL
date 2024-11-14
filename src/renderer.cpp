@@ -95,8 +95,8 @@ void Renderer::renderSetup() {
   createFramebufferAttachments();
   initializeUniformBuffers();
 
-  temple_model_->drawSetup(TEMPLE_VERTEX_SSBO_BINDING, TEMPLE_TEX_ARRAY_TEX_UNIT);
-  skybox_->drawSetup(SKYBOX_VERTEX_SSBO_BINDING, SKYBOX_CUBEMAP_TEX_UNIT);
+  temple_model_->drawSetup(TEMPLE_VERTEX_SSBO_BINDING, TEMPLE_TEXTURE_ARRAY_BINDING);
+  skybox_->drawSetup(SKYBOX_VERTEX_SSBO_BINDING, SKYBOX_CUBE_MAP_BINDING);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
                        "Renderer::renderSetup() successful.");
@@ -247,7 +247,7 @@ void Renderer::createFramebufferAttachments() {
   glNamedFramebufferRenderbuffer(fbo_.id, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo_depth_attachment_.id);
   checkFramebufferErrors(fbo_);
 
-  glBindTextureUnit(IMAGE_SCENE_TEX_UNIT, fbo_color_attachment_.id);
+  glBindTextureUnit(IMAGE_SCENE_TEXTURE_BINDING, fbo_color_attachment_.id);
 }
 
 void Renderer::checkFramebufferErrors(const wrap::Framebuffer& framebuffer) {

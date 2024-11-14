@@ -13,7 +13,7 @@ class Skybox {
   /**
    * Creates required OpenGL resources.
    *
-   * @param paths   List of paths to the 6 faces of a cubemap, in +X, -X, +Y, -Y, +Z, -Z order. The textures should be
+   * @param paths   List of paths to the 6 faces of a cube map, in +X, -X, +Y, -Y, +Z, -Z order. The textures should be
    *                512x512, in RGB or RGBA format (4th channel will be ignored).
    */
   explicit Skybox(const std::vector<std::string>& paths);
