@@ -104,7 +104,7 @@ void Initializer<T>::init() {
   /// Configure OpenGL debug output
   int flags;
   glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-  if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) { // Check if GLFW created a debug context (i.e. if debug_enabled = true)
+  if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) { // Check if GLFW created debug context (as expected if debug_enabled == true)
     std::cout << "INFO (Initializer::init): OpenGL debug output enabled." << std::endl;
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

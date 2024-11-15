@@ -157,7 +157,7 @@ void Renderer::render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   image_shader_->use();
   glDisable(GL_DEPTH_TEST);
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
   glEnable(GL_DEPTH_TEST);
 }
 
