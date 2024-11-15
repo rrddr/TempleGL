@@ -8,7 +8,7 @@ Skybox::Skybox(const std::vector<std::string>& paths) {
 
   /// Create, fill, and configure cube map texture
   glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cube_map_.id);
-  glTextureStorage2D(cube_map_.id, 1, GL_RGB8, FACE_SIZE, FACE_SIZE);
+  glTextureStorage2D(cube_map_.id, 1, GL_SRGB8, FACE_SIZE, FACE_SIZE);
   for (int i = 0; i < 6; ++i) {
     help::fill3DTextureLayer(paths[i], cube_map_, i, FACE_SIZE, FACE_SIZE);
   }

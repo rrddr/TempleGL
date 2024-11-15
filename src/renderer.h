@@ -74,10 +74,12 @@ class Renderer : public Initializer<RendererConfig> {
   struct DirectionalLight {
     glm::vec4 origin;
     glm::vec4 color;
+    float intensity;
   };
   static constexpr DirectionalLight SUNLIGHT {
       {-0.4f, 0.8f, -1.0f, 0.0f},
-      {1.0f, 1.0f, 1.0f, 1.0f},
+      {1.0f, 0.7f, 0.4f, 1.0f},
+      1.0f
   };
   static constexpr GLuint TEMPLE_TEXTURE_ARRAY_BINDING {0};
   static constexpr GLuint SKYBOX_CUBE_MAP_BINDING {1};

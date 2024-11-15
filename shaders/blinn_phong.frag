@@ -13,6 +13,7 @@ struct CameraParameters {
 struct DirectionalLight {
     vec4 origin; // pointing toward "source"
     vec4 color;
+    float intensity;
 };
 layout (binding = 1, std140) uniform light_ubo {
     CameraParameters camera;
@@ -22,7 +23,7 @@ layout (binding = 1, std140) uniform light_ubo {
 layout(binding = 0) uniform sampler2DArray texture_array;
 
 const float SPECULAR_EXPONENT = 16.0;
-const vec3 AMBIENT_LIGHT = vec3(0.3);
+const vec3 AMBIENT_LIGHT = vec3(0.7);
 
 out vec4 frag_color;
 
@@ -51,7 +52,7 @@ vec3 calculateSunlightContribution(vec3 diffuse_color, vec3 N, vec3 V, float spe
     vec3 diffuse = diffuse_color * sunlight.color.rgb * max(dot(N, L), 0.0);
 
     vec3 H = normalize(L + V); // halfway vector
-    vec3 specular = min(specular_factor * pow(max(dot(N, H), 0.0), SPECULAR_EXPONENT), 0.4) * sunlight.color.rgb;
+    vec3 specular = specular_factor * pow(max(dot(N, H), 0.0), SPECULAR_EXPONENT) * sunlight.color.rgb;
 
-    return diffuse + specular;
+    return (diffuse + specular) * sunlight.intensity;
 }
