@@ -47,7 +47,8 @@ class Renderer : public Initializer<RendererConfig> {
   std::unique_ptr<ShaderProgram> temple_shader_;
   std::unique_ptr<ShaderProgram> skybox_shader_;
   std::unique_ptr<ShaderProgram> image_shader_;
-  wrap::Texture fbo_color_attachment_ {};
+  wrap::Texture fbo_main_color_attachment_ {};
+  wrap::Texture fbo_sky_color_attachment_ {};
   wrap::Renderbuffer fbo_depth_attachment_ {};
   wrap::Framebuffer fbo_ {};
   wrap::VertexArray vao_ {};
@@ -90,9 +91,10 @@ class Renderer : public Initializer<RendererConfig> {
   static constexpr GLuint TEMPLE_TEXTURE_ARRAY_BINDING {0};
   static constexpr GLuint SKYBOX_CUBE_MAP_BINDING {1};
   static constexpr GLuint IMAGE_SCENE_TEXTURE_BINDING {2};
+  static constexpr GLuint SKY_SCENE_TEXTURE_BINDING {3};
   static constexpr GLuint TEMPLE_VERTEX_SSBO_BINDING {0};
   static constexpr GLuint SKYBOX_VERTEX_SSBO_BINDING {1};
-  static constexpr GLuint MATRIX_UBO_BINDING {0};
   static constexpr GLuint LIGHT_SSBO_BINDING {2};
+  static constexpr GLuint MATRIX_UBO_BINDING {0};
 };
 #endif //TEMPLEGL_SRC_RENDERER_H_
