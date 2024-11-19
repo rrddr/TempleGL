@@ -4,7 +4,7 @@
 Skybox::Skybox(const std::vector<std::string>& paths) {
   /// Create and fill buffer
   glCreateBuffers(1, &vertex_buffer_.id);
-  glNamedBufferStorage(vertex_buffer_.id, sizeof(VERTICES), VERTICES, 0);
+  glNamedBufferStorage(vertex_buffer_.id, sizeof(VERTICES), VERTICES.data(), 0);
 
   /// Create, fill, and configure cube map texture
   glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cube_map_.id);

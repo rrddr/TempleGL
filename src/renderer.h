@@ -71,15 +71,21 @@ class Renderer : public Initializer<RendererConfig> {
   static void checkFramebufferErrors(const wrap::Framebuffer& framebuffer);
 
   /// Hardcoded shader parameters
-  struct DirectionalLight {
-    glm::vec4 origin;
+  struct Light {
+    glm::vec4 source;
     glm::vec4 color;
     float intensity;
+    float padding[3];   // padding to conform with std430 storage layout rules
   };
-  static constexpr DirectionalLight SUNLIGHT {
+  static constexpr Light SUNLIGHT {
       {-0.4f, 0.8f, -1.0f, 0.0f},
       {1.0f, 0.7f, 0.4f, 1.0f},
-      1.0f
+      2.0f
+  };
+  static constexpr Light DEFAULT_POINT_LIGHT {
+      {0.0f, 0.0f, 0.0f, 1.0f},
+      {0.6f, 1.0f, 0.9f, 1.0f},
+      0.0125f
   };
   static constexpr GLuint TEMPLE_TEXTURE_ARRAY_BINDING {0};
   static constexpr GLuint SKYBOX_CUBE_MAP_BINDING {1};
@@ -87,6 +93,6 @@ class Renderer : public Initializer<RendererConfig> {
   static constexpr GLuint TEMPLE_VERTEX_SSBO_BINDING {0};
   static constexpr GLuint SKYBOX_VERTEX_SSBO_BINDING {1};
   static constexpr GLuint MATRIX_UBO_BINDING {0};
-  static constexpr GLuint LIGHT_UBO_BINDING {1};
+  static constexpr GLuint LIGHT_SSBO_BINDING {2};
 };
 #endif //TEMPLEGL_SRC_RENDERER_H_

@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <string>
+#include <array>
 #include <memory>
 
 /**
@@ -16,6 +17,8 @@
  */
 class Model {
  public:
+  std::vector<glm::vec4> light_positions_;
+
   /**
    * Parses a Wavefront .obj file, and loads the data into OpenGL buffers.
    * <p>
@@ -68,6 +71,7 @@ class Model {
 
   std::string source_dir_;
   GLsizei num_draw_commands_;
+  std::vector<unsigned int> light_material_indices_;
 
   wrap::Buffer vertex_buffer_ {};
   wrap::Buffer index_buffer_ {};
@@ -76,9 +80,10 @@ class Model {
 
   template<typename T>
   static void createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector);
-  void createBuffers(aiMesh** meshes, unsigned int num_meshes);
-  void createTextureArray(aiMaterial** materials, unsigned int num_materials);
+  void processMaterials(aiMaterial** materials, unsigned int num_materials);
+  void processMeshes(aiMesh** meshes, unsigned int num_meshes);
 
   static constexpr GLsizei TEX_SIZE {128};
+  static constexpr std::array LIGHT_MATERIAL_NAMES {"sea_lantern"};
 };
 #endif //TEMPLEGL_SRC_MODEL_H_

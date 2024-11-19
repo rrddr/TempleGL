@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <string>
+#include <array>
 #include <memory>
 
 class Skybox {
@@ -39,7 +40,7 @@ class Skybox {
   wrap::Texture cube_map_ {};
   wrap::Buffer vertex_buffer_ {};
   static constexpr GLsizei FACE_SIZE {512};
-  static constexpr GLfloat VERTICES[108] {
+  static constexpr std::array<GLfloat, 108> VERTICES {
       -0.5f, -0.5f, -0.5f,
       0.5f, -0.5f, -0.5f,
       0.5f, 0.5f, -0.5f,

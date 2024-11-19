@@ -207,9 +207,18 @@ void Renderer::initializeUniformBuffers() {
                        glm::value_ptr(camera_->getViewMatrix()));
   glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_UBO_BINDING, state_.matrix_buffer.id);
 
+  std::vector<Light> point_lights;
+  for (glm::vec4 position : temple_model_->light_positions_) {
+    point_lights.emplace_back(position, DEFAULT_POINT_LIGHT.color, DEFAULT_POINT_LIGHT.intensity);
+  }
+  auto num_point_lights = static_cast<GLuint>(point_lights.size());
+
   glCreateBuffers(1, &state_.light_buffer.id);
   glNamedBufferStorage(state_.light_buffer.id,
-                       sizeof(glm::vec4) + sizeof(DirectionalLight),
+                       sizeof(glm::vec4)
+                       + sizeof(Light)
+                       + sizeof(glm::vec4) // sizeof(GLuint) + padding to maintain std430 alignment
+                       + point_lights.size() * sizeof(Light),
                        nullptr,
                        GL_DYNAMIC_STORAGE_BIT);
   glNamedBufferSubData(state_.light_buffer.id,
@@ -218,9 +227,20 @@ void Renderer::initializeUniformBuffers() {
                        glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
   glNamedBufferSubData(state_.light_buffer.id,
                        sizeof(glm::vec4),
-                       sizeof(DirectionalLight),
+                       sizeof(Light),
                        &SUNLIGHT);
-  glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_UBO_BINDING, state_.light_buffer.id);
+  glNamedBufferSubData(state_.light_buffer.id,
+                       sizeof(glm::vec4)
+                       + sizeof(Light),
+                       sizeof(GLuint),
+                       &num_point_lights);
+  glNamedBufferSubData(state_.light_buffer.id,
+                       sizeof(glm::vec4)
+                       + sizeof(Light)
+                       + sizeof(glm::vec4),
+                       point_lights.size() * sizeof(Light),
+                       point_lights.data());
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHT_SSBO_BINDING, state_.light_buffer.id);
 }
 
 void Renderer::createFramebufferAttachments() {
