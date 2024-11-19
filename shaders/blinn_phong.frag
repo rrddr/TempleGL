@@ -10,24 +10,28 @@ in VS_OUT {
 struct CameraParameters {
     vec4 position;
 };
-struct DirectionalLight {
-    vec4 origin; // pointing toward "source"
+struct Light {
+    vec4 source;
     vec4 color;
     float intensity;
 };
-layout (binding = 1, std140) uniform light_ubo {
+layout (binding = 2, std430) readonly buffer light_ssbo {
     CameraParameters camera;
-    DirectionalLight sunlight;
+    Light sunlight;
+    uint num_point_lights;
+    Light point_lights[];
 };
 
-layout(binding = 0) uniform sampler2DArray texture_array;
+layout (binding = 0) uniform sampler2DArray texture_array;
 
 const float SPECULAR_EXPONENT = 16.0;
-const vec3 AMBIENT_LIGHT = vec3(0.7);
+const float POINT_LIGHT_MAX_R = 7.0;
+const vec3 AMBIENT_LIGHT = vec3(1.0);
 
 out vec4 frag_color;
 
-vec3 calculateSunlightContribution(vec3 diffuse_color, vec3 N, vec3 V, float specular_factor);
+vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_color, float specular_factor);
+float calculateAttenuation(float intensity, float source_distance);
 
 void main() {
     // Retrieve values from texture array
@@ -37,22 +41,35 @@ void main() {
 
     // Compute intermediates
     vec3 diffuse_color = pow(raw_diffuse, vec3(2.2));
-    float specular_factor = raw_specular; // TODO: tweak
+    float specular_factor = 1.0 - pow(1.0 - raw_specular, 2.0);
     vec3 N = fs_in.TBN * normalize(raw_normal * 2.0 - 1.0);
-    vec3 V = normalize((camera.position - fs_in.position).xyz);
+    vec3 V = normalize(camera.position.xyz - fs_in.position.xyz);
 
     // Compute contributions from light sources
-    vec3 sunlight_contribution = calculateSunlightContribution(diffuse_color, N, V, specular_factor);
+    vec3 sunlight_contribution = sunlight.intensity * calculateBlinnPhong(
+        normalize(sunlight.source.xyz), N, V, diffuse_color, sunlight.color.rgb, specular_factor
+    );
+    vec3 point_light_contribution = vec3(0.0);
+    for (int i = 0; i < num_point_lights; ++i) {
+        vec3 relative_light_position = point_lights[i].source.xyz - fs_in.position.xyz;
+        float attenuation = calculateAttenuation(point_lights[i].intensity, length(relative_light_position));
+        point_light_contribution += attenuation * calculateBlinnPhong(
+            normalize(relative_light_position), N, V, diffuse_color, point_lights[i].color.rgb, specular_factor
+        );
+    }
 
-    frag_color = vec4(AMBIENT_LIGHT*diffuse_color + sunlight_contribution, 1.0);
+    frag_color = vec4(AMBIENT_LIGHT * diffuse_color + sunlight_contribution + point_light_contribution, 1.0);
 }
 
-vec3 calculateSunlightContribution(vec3 diffuse_color, vec3 N, vec3 V, float specular_factor) {
-    vec3 L = normalize(sunlight.origin.xyz);
-    vec3 diffuse = diffuse_color * sunlight.color.rgb * max(dot(N, L), 0.0);
-
+vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_color, float specular_factor) {
+    vec3 diffuse = light_color * max(dot(N, L), 0.0);
     vec3 H = normalize(L + V); // halfway vector
-    vec3 specular = specular_factor * pow(max(dot(N, H), 0.0), SPECULAR_EXPONENT) * sunlight.color.rgb;
+    vec3 specular = specular_factor * light_color * pow(max(dot(N, H), 0.0), SPECULAR_EXPONENT);
 
-    return (diffuse + specular) * sunlight.intensity;
+    return diffuse_color * (diffuse + specular);
+}
+
+float calculateAttenuation(float intensity, float source_distance) {
+    return intensity * pow(max(1.0 - pow(source_distance / POINT_LIGHT_MAX_R, 4.0), 0.0), 2.0)
+        * (1.0 / (pow(source_distance, 2.0), 0.1));
 }

@@ -6,6 +6,7 @@
 
 #include <format>
 #include <filesystem>
+#include <cstring>
 
 Model::Model(const std::string& obj_path) {
   // Importer keeps ownership of all assimp resources, and destroys them once it goes out of scope
@@ -23,8 +24,8 @@ Model::Model(const std::string& obj_path) {
   }
   source_dir_ = obj_path.substr(0, obj_path.find_last_of('/') + 1);
   num_draw_commands_ = static_cast<GLsizei>(scene->mNumMeshes);
-  createTextureArray(scene->mMaterials, scene->mNumMaterials);
-  createBuffers(scene->mMeshes, scene->mNumMeshes);
+  processMaterials(scene->mMaterials, scene->mNumMaterials);
+  processMeshes(scene->mMeshes, scene->mNumMeshes);
 }
 
 void Model::drawSetup(GLuint vertex_buffer_binding,
@@ -35,18 +36,24 @@ void Model::drawSetup(GLuint vertex_buffer_binding,
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, draw_command_buffer_.id);
 }
 
-void Model::createTextureArray(aiMaterial** materials, unsigned int num_materials) {
+void Model::processMaterials(aiMaterial** materials, unsigned int num_materials) {
   glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array_.id);
   glTextureStorage3D(texture_array_.id, 1, GL_RGB8, TEX_SIZE, TEX_SIZE, static_cast<GLsizei>(num_materials) * 3);
   GLint z_offset {0};
-  for (int i = 0; i < num_materials; ++i) {
-    aiString material_name = materials[i]->GetName();
+  for (unsigned int i = 0; i < num_materials; ++i) {
+    auto material_name = materials[i]->GetName().C_Str();
+    if (std::find_if(LIGHT_MATERIAL_NAMES.begin(),
+                     LIGHT_MATERIAL_NAMES.end(),
+                     [&material_name](const char* s) { return strcmp(s, material_name) == 0; })
+        != LIGHT_MATERIAL_NAMES.end()) {
+      light_material_indices_.push_back(i);
+    }
     for (auto folder : {"diffuse/", "normal/", "specular/"}) {
-      std::string path = source_dir_ + folder + material_name.C_Str() + ".png";
+      std::string path = source_dir_ + folder + material_name + ".png";
       if (!std::filesystem::exists(path)) {
         glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                             std::format("(Model::createTextureArray): Using default {} texture for material '{}.'",
-                                         folder, material_name.C_Str()).c_str());
+                             std::format("(Model::processMaterials): Using default {} texture for material '{}.'",
+                                         folder, material_name).c_str());
         path = source_dir_ + folder + "DefaultMaterial.png";
       }
       help::fill3DTextureLayer(path, texture_array_, z_offset, TEX_SIZE, TEX_SIZE);
@@ -56,10 +63,10 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                       "Model::createTextureArray() successful.");
+                       "Model::processMaterials() successful.");
 }
 
-void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
+void Model::processMeshes(aiMesh** meshes, unsigned int num_meshes) {
   std::vector<Vertex> vertices;
   std::vector<GLuint> indices;
   std::vector<DrawElementsIndirectCommand> draw_commands;
@@ -71,9 +78,21 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
     aiMesh* mesh = meshes[i];
     if (mesh->mPrimitiveTypes != (aiPrimitiveType_TRIANGLE | aiPrimitiveType_NGONEncodingFlag)) {
       glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
-                           "(Model::createBuffers): Detected point/line primitives in mesh, which is not allowed. "
+                           "(Model::processMeshes): Detected point/line primitives in mesh, which is not allowed. "
                            "This mesh will be skipped.");
       continue;
+    }
+
+    /// Check if mesh is a light source, and if so, store average of vertices as light position
+    if (std::find(light_material_indices_.begin(), light_material_indices_.end(), mesh->mMaterialIndex)
+        != light_material_indices_.end()) {
+      aiVector3t<ai_real> average {0.0f};
+      for (int j = 0; j < mesh->mNumVertices; ++j) {
+//        average += mesh->mVertices[j];
+          light_positions_.emplace_back(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.0f);
+      }
+//      average /= static_cast<float>(mesh->mNumVertices);
+//      light_positions_.emplace_back(average.x, average.y, average.z, 1.0f);
     }
 
     /// Instead of storing meta-information somewhere, we use it to directly create a draw command for the mesh
@@ -120,7 +139,7 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
   createBufferFromVector<DrawElementsIndirectCommand>(draw_command_buffer_, draw_commands);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                       "Model::createBuffers() successful.");
+                       "Model::processMeshes() successful.");
 }
 
 template<typename T>

@@ -82,8 +82,8 @@ void Renderer::renderSetup() {
   };
   skybox_ = std::make_unique<Skybox>(skybox_paths);
   temple_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                      .vertex(config_.shader_path + "/blinn_phong.vert")
-                                                      .fragment(config_.shader_path + "/blinn_phong.frag"));
+                                                       .vertex(config_.shader_path + "/blinn_phong.vert")
+                                                       .fragment(config_.shader_path + "/blinn_phong.frag"));
   skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                        .vertex(config_.shader_path + "/sky.vert")
                                                        .fragment(config_.shader_path + "/sky.frag"));
@@ -142,8 +142,12 @@ void Renderer::render() {
   /// Render scene to framebuffer
   lock_gl_viewport_ = true;
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_.id);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_DEPTH_BUFFER_BIT);
+  glNamedFramebufferDrawBuffer(fbo_.id, GL_COLOR_ATTACHMENT0);
+  glClear(GL_COLOR_BUFFER_BIT);
   temple_model_->draw(temple_shader_);
+  glNamedFramebufferDrawBuffer(fbo_.id, GL_COLOR_ATTACHMENT1);
+  glClear(GL_COLOR_BUFFER_BIT);
   skybox_->draw(skybox_shader_);
 
   /// Post-processing and render to screen
@@ -207,9 +211,18 @@ void Renderer::initializeUniformBuffers() {
                        glm::value_ptr(camera_->getViewMatrix()));
   glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_UBO_BINDING, state_.matrix_buffer.id);
 
+  std::vector<Light> point_lights;
+  for (glm::vec4 position : temple_model_->light_positions_) {
+    point_lights.emplace_back(position, DEFAULT_POINT_LIGHT.color, DEFAULT_POINT_LIGHT.intensity);
+  }
+  auto num_point_lights = static_cast<GLuint>(point_lights.size());
+
   glCreateBuffers(1, &state_.light_buffer.id);
   glNamedBufferStorage(state_.light_buffer.id,
-                       sizeof(glm::vec4) + sizeof(DirectionalLight),
+                       sizeof(glm::vec4)
+                       + sizeof(Light)
+                       + sizeof(glm::vec4) // sizeof(GLuint) + padding to maintain std430 alignment
+                       + point_lights.size() * sizeof(Light),
                        nullptr,
                        GL_DYNAMIC_STORAGE_BIT);
   glNamedBufferSubData(state_.light_buffer.id,
@@ -218,36 +231,57 @@ void Renderer::initializeUniformBuffers() {
                        glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
   glNamedBufferSubData(state_.light_buffer.id,
                        sizeof(glm::vec4),
-                       sizeof(DirectionalLight),
+                       sizeof(Light),
                        &SUNLIGHT);
-  glBindBufferBase(GL_UNIFORM_BUFFER, LIGHT_UBO_BINDING, state_.light_buffer.id);
+  glNamedBufferSubData(state_.light_buffer.id,
+                       sizeof(glm::vec4)
+                       + sizeof(Light),
+                       sizeof(GLuint),
+                       &num_point_lights);
+  glNamedBufferSubData(state_.light_buffer.id,
+                       sizeof(glm::vec4)
+                       + sizeof(Light)
+                       + sizeof(glm::vec4),
+                       point_lights.size() * sizeof(Light),
+                       point_lights.data());
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHT_SSBO_BINDING, state_.light_buffer.id);
 }
 
 void Renderer::createFramebufferAttachments() {
   // Attachments must be recreated if window dimensions change
-  if (fbo_color_attachment_.id) glDeleteTextures(1, &fbo_color_attachment_.id);
+  if (fbo_main_color_attachment_.id) glDeleteTextures(1, &fbo_main_color_attachment_.id);
   if (fbo_depth_attachment_.id) glDeleteRenderbuffers(1, &fbo_depth_attachment_.id);
 
-  glCreateTextures(GL_TEXTURE_2D, 1, &fbo_color_attachment_.id);
-  glTextureStorage2D(fbo_color_attachment_.id,
+  glCreateTextures(GL_TEXTURE_2D, 1, &fbo_main_color_attachment_.id);
+  glTextureParameteri(fbo_main_color_attachment_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTextureParameteri(fbo_main_color_attachment_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTextureStorage2D(fbo_main_color_attachment_.id,
                      1,
                      GL_RGBA16F,
                      config_.window_width,
                      config_.window_height);
-  glTextureParameteri(fbo_color_attachment_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(fbo_color_attachment_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glNamedFramebufferTexture(fbo_.id, GL_COLOR_ATTACHMENT0, fbo_main_color_attachment_.id, 0);
+
+  glCreateTextures(GL_TEXTURE_2D, 1, &fbo_sky_color_attachment_.id);
+  glTextureParameteri(fbo_sky_color_attachment_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTextureParameteri(fbo_sky_color_attachment_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTextureStorage2D(fbo_sky_color_attachment_.id,
+                     1,
+                     GL_RGBA16F,
+                     config_.window_width,
+                     config_.window_height);
+  glNamedFramebufferTexture(fbo_.id, GL_COLOR_ATTACHMENT1, fbo_sky_color_attachment_.id, 0);
 
   glCreateRenderbuffers(1, &fbo_depth_attachment_.id);
   glNamedRenderbufferStorage(fbo_depth_attachment_.id,
                              GL_DEPTH_COMPONENT32F,
                              config_.window_width,
                              config_.window_height);
-
-  glNamedFramebufferTexture(fbo_.id, GL_COLOR_ATTACHMENT0, fbo_color_attachment_.id, 0);
   glNamedFramebufferRenderbuffer(fbo_.id, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo_depth_attachment_.id);
   checkFramebufferErrors(fbo_);
 
-  glBindTextureUnit(IMAGE_SCENE_TEXTURE_BINDING, fbo_color_attachment_.id);
+  glBindTextureUnit(IMAGE_SCENE_TEXTURE_BINDING, fbo_main_color_attachment_.id);
+  glBindTextureUnit(SKY_SCENE_TEXTURE_BINDING, fbo_sky_color_attachment_.id);
 }
 
 void Renderer::checkFramebufferErrors(const wrap::Framebuffer& framebuffer) {
