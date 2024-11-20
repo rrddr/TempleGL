@@ -8,12 +8,13 @@ in VS_OUT {
 layout(binding = 2) uniform sampler2D rendered_scene;
 layout(binding = 3) uniform sampler2D rendered_sky;
 
+const float EXPOSURE = 0.5;
+
 out vec4 frag_color;
 
 void main() {
     vec3 scene_color = texture(rendered_scene, fs_in.uv).rgb;
-    vec3 tone_mapped = scene_color / (scene_color + vec3(1.0));
-//    vec3 tone_mapped = vec3(1.0) - exp(-hdr_color * 0.7);
+    vec3 tone_mapped = vec3(1.0) - exp(-scene_color * EXPOSURE);
 
     vec3 sky_color = texture(rendered_sky, fs_in.uv).rgb;
 
