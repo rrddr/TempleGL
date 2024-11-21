@@ -1,6 +1,5 @@
 //FRAGMENT_SHADER
 #version 460 core
-
 in VS_OUT {
     vec2 uv;
 } fs_in;
@@ -8,7 +7,7 @@ in VS_OUT {
 layout(binding = 2) uniform sampler2D rendered_scene;
 layout(binding = 3) uniform sampler2D rendered_sky;
 
-const float EXPOSURE = 0.5;
+const float EXPOSURE = 0.7;
 
 out vec4 frag_color;
 

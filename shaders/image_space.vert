@@ -1,6 +1,5 @@
 //VERTEX_SHADER
 #version 460 core
-
 // By specifying coordinates outside NDC range, we can fill screen with a single triangle
 const vec2[3] vertices = {
     { -1.0, -1.0 },

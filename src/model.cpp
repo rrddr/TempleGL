@@ -89,7 +89,7 @@ void Model::processMeshes(aiMesh** meshes, unsigned int num_meshes) {
       aiVector3t<ai_real> average {0.0f};
       for (int j = 0; j < mesh->mNumVertices; ++j) {
 //        average += mesh->mVertices[j];
-          light_positions_.emplace_back(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.0f);
+//          light_positions_.emplace_back(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.0f);
       }
 //      average /= static_cast<float>(mesh->mNumVertices);
 //      light_positions_.emplace_back(average.x, average.y, average.z, 1.0f);
