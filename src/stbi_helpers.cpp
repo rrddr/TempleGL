@@ -17,7 +17,7 @@ void help::fill3DTextureLayer(const std::string& path,
                               GLsizei width,
                               GLsizei height) {
   int actual_width, actual_height, actual_num_components;
-  auto data = std::unique_ptr<unsigned char, StbiDeleter>(stbi_load(path.c_str(),
+  const auto data = std::unique_ptr<unsigned char, StbiDeleter>(stbi_load(path.c_str(),
                                                                     &actual_width,
                                                                     &actual_height,
                                                                     &actual_num_components,

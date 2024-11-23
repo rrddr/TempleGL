@@ -2,9 +2,6 @@
 #define TEMPLEGL_SRC_SHADER_PROGRAM_H_
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include <string>
 
 /**

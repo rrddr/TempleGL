@@ -34,15 +34,15 @@ void Initializer<T>::loadConfigYaml() {
     throw; // re-throw to main
   }
   try {
-    YAML::Node window = config_yaml["window"];
+    const YAML::Node window = config_yaml["window"];
     config_.window_name = window["name"].as<std::string>();
     config_.window_width = window["width"].as<int>();
     config_.window_height = window["height"].as<int>();
     config_.window_initial_x_pos = window["initial_x_pos"].as<int>();
     config_.window_initial_y_pos = window["initial_y_pos"].as<int>();
-    YAML::Node debug = config_yaml["debug"];
+    const YAML::Node debug = config_yaml["debug"];
     config_.debug_enabled = debug["enabled"].as<bool>();
-    auto debug_level_str = debug["level"].as<std::string>();
+    const auto debug_level_str = debug["level"].as<std::string>();
     if (debug_level_str == "all") { config_.debug_level = ALL; }
     else if (debug_level_str == "low") { config_.debug_level = LOW; }
     else if (debug_level_str == "medium") { config_.debug_level = MEDIUM; }

@@ -4,6 +4,7 @@ in VS_OUT {
     flat int material_index;
     smooth vec2 uv;
     smooth vec4 position;
+    smooth vec4 sunlight_space_position;
     flat mat3 TBN;
 } fs_in;
 
@@ -23,6 +24,7 @@ layout (binding = 2, std430) readonly buffer light_ssbo {
 };
 
 layout (binding = 0) uniform sampler2DArray texture_array;
+layout (binding = 4) uniform sampler2D sunlight_shadow_map;
 
 const float SPECULAR_EXPONENT = 16.0;
 const float POINT_LIGHT_MAX_R = 7.0;
@@ -30,6 +32,7 @@ const vec3 AMBIENT_LIGHT = vec3(1.0);
 
 out vec4 frag_color;
 
+float calculateShadow();
 vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_color, float specular_factor);
 float calculateAttenuation(float intensity, float source_distance);
 
@@ -46,19 +49,28 @@ void main() {
     vec3 V = normalize(camera.position.xyz - fs_in.position.xyz);
 
     // Compute contributions from light sources
-    vec3 sunlight_contribution = sunlight.intensity * calculateBlinnPhong(
+    vec3 final_color = vec3(0.0);
+
+    final_color += sunlight.intensity * calculateBlinnPhong(
         normalize(sunlight.source.xyz), N, V, diffuse_color, sunlight.color.rgb, specular_factor
     );
-    vec3 point_light_contribution = vec3(0.0);
     for (int i = 0; i < num_point_lights; ++i) {
         vec3 relative_light_position = point_lights[i].source.xyz - fs_in.position.xyz;
         float attenuation = calculateAttenuation(point_lights[i].intensity, length(relative_light_position));
-        point_light_contribution += attenuation * calculateBlinnPhong(
+        final_color += attenuation * calculateBlinnPhong(
             normalize(relative_light_position), N, V, diffuse_color, point_lights[i].color.rgb, specular_factor
         );
     }
 
-    frag_color = vec4(AMBIENT_LIGHT * diffuse_color + sunlight_contribution + point_light_contribution, 1.0);
+    final_color *= calculateShadow();
+    final_color += AMBIENT_LIGHT * diffuse_color;
+    frag_color = vec4(final_color, 1.0);
+}
+
+float calculateShadow() {
+    vec3 remapped_position = (fs_in.sunlight_space_position.xyz / fs_in.sunlight_space_position.w) * 0.5 + 0.5;
+    float bias = 0.0001;
+    return remapped_position.z - bias > texture(sunlight_shadow_map, remapped_position.xy).r ? 0.0 : 1.0;
 }
 
 vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_color, float specular_factor) {

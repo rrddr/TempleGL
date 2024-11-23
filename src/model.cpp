@@ -75,7 +75,7 @@ void Model::processMeshes(aiMesh** meshes, unsigned int num_meshes) {
   GLuint first_index = 0;
   Vertex vertex {};
   for (int i = 0; i < num_meshes; ++i) {
-    aiMesh* mesh = meshes[i];
+    const aiMesh* mesh = meshes[i];
     if (mesh->mPrimitiveTypes != (aiPrimitiveType_TRIANGLE | aiPrimitiveType_NGONEncodingFlag)) {
       glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
                            "(Model::processMeshes): Detected point/line primitives in mesh, which is not allowed. "
