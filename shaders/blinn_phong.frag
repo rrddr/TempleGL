@@ -67,7 +67,7 @@ void main() {
 
 float calculateShadow() {
     vec3 remapped_position = (fs_in.sunlight_space_position.xyz / fs_in.sunlight_space_position.w) * 0.5 + 0.5;
-    float bias = 0.0001;
+    float bias = 0.0005;
 
     // sample shadow map in 3x3 square around actual uv
     float shadow = 0.0;

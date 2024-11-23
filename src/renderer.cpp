@@ -314,7 +314,7 @@ void Renderer::generateShadowMap() {
     max_x = glm::max(max_x, light_view_corner.x);
     max_y = glm::max(max_y, light_view_corner.y);
   }
-  const float z_depth = config_.camera_far_plane * 2.0;
+  const float z_depth = config_.camera_far_plane;
   const glm::mat4 light_projection = glm::ortho(min_x, max_x, min_y, max_y, -z_depth, z_depth);
   const glm::mat4 light_space = light_projection * light_view;
   glNamedBufferSubData(state_.matrix_buffer.id,
