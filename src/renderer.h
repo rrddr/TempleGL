@@ -103,7 +103,7 @@ class Renderer : public Initializer<RendererConfig> {
       {0.6f, 1.0f, 0.9f, 1.0f},
       0.0125f
   };
-  static constexpr GLsizei SHADOW_MAP_SIZE {8096};
+  static constexpr GLsizei SHADOW_MAP_SIZE {16192};
 
   static constexpr GLuint TEMPLE_TEXTURE_ARRAY_BINDING {0};
   static constexpr GLuint SKYBOX_CUBE_MAP_BINDING {1};
