@@ -49,9 +49,9 @@ void main() {
     vec3 V = normalize(camera.position.xyz - fs_in.position.xyz);
 
     // Compute contributions from light sources
-    vec3 final_color = vec3(0.0);
+    vec3 final_color = AMBIENT_LIGHT * diffuse_color;
 
-    final_color += sunlight.intensity * calculateBlinnPhong(
+    final_color += calculateShadow() * sunlight.intensity * calculateBlinnPhong(
         normalize(sunlight.source.xyz), N, V, diffuse_color, sunlight.color.rgb, specular_factor
     );
     for (int i = 0; i < num_point_lights; ++i) {
@@ -62,8 +62,6 @@ void main() {
         );
     }
 
-    final_color *= calculateShadow();
-    final_color += AMBIENT_LIGHT * diffuse_color;
     frag_color = vec4(final_color, 1.0);
 }
 
