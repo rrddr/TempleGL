@@ -82,7 +82,6 @@ class Renderer : public Initializer<RendererConfig> {
   void scrollCallback(float y_offset) override;
 
   /// Helper methods
-  void processPendingGlViewport();
   static std::vector<glm::vec4> getFrustumCorners(const glm::mat4& projection, const glm::mat4& view);
   static void checkFramebufferErrors(const wrap::Framebuffer& framebuffer);
 

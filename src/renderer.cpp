@@ -149,7 +149,6 @@ void Renderer::render() {
   generateShadowMap();
 
   /// Render scene to framebuffer
-  lock_gl_viewport_ = true;
   glBindFramebuffer(GL_FRAMEBUFFER, objects_.scene_fbo.id);
   glClear(GL_DEPTH_BUFFER_BIT);
   glNamedFramebufferDrawBuffer(objects_.scene_fbo.id, GL_COLOR_ATTACHMENT0);
@@ -159,8 +158,6 @@ void Renderer::render() {
   glClear(GL_COLOR_BUFFER_BIT);
   skybox_->draw(skybox_shader_);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  lock_gl_viewport_ = false;
-  processPendingGlViewport();
 
   /// Post-processing and render to screen
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -323,7 +320,6 @@ void Renderer::generateShadowMap() {
                        glm::value_ptr(light_space));
 
   /// Generate
-  lock_gl_viewport_ = true;
   glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
   glBindFramebuffer(GL_FRAMEBUFFER, objects_.shadow_fbo.id);
   glNamedFramebufferDrawBuffer(objects_.shadow_fbo.id, GL_NONE);
@@ -331,13 +327,11 @@ void Renderer::generateShadowMap() {
   temple_model_->draw(shadow_map_shader_);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, config_.window_width, config_.window_height);
-  lock_gl_viewport_ = false;
-  processPendingGlViewport();
 }
 
 void Renderer::framebufferSizeCallback(int width, int height) {
   Initializer::framebufferSizeCallback(width, height);
-  if (!lock_gl_viewport_) { createSceneFramebufferAttachments(); }
+  createSceneFramebufferAttachments();
   camera_->updateAspectRatio(static_cast<float>(width) / static_cast<float>(height));
   glNamedBufferSubData(state_.matrix_buffer.id,
                        0,
@@ -374,13 +368,6 @@ std::vector<glm::vec4> Renderer::getFrustumCorners(const glm::mat4& projection, 
     corners.push_back(world_space_corner / world_space_corner.w);
   }
   return corners;
-}
-void Renderer::processPendingGlViewport() {
-  if (pending_gl_viewport_) {
-    glViewport(0, 0, config_.window_width, config_.window_height);
-    createSceneFramebufferAttachments();
-    pending_gl_viewport_ = false;
-  }
 }
 
 void Renderer::checkFramebufferErrors(const wrap::Framebuffer& framebuffer) {

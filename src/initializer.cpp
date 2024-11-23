@@ -136,11 +136,7 @@ template<typename T>
 void Initializer<T>::framebufferSizeCallback(int width, int height) {
   config_.window_width = width;
   config_.window_height = height;
-  if (!lock_gl_viewport_) {
-    glViewport(0, 0, width, height);
-  } else {
-    pending_gl_viewport_ = true;
-  }
+  glViewport(0, 0, width, height);
 }
 
 template<typename T>
