@@ -65,17 +65,6 @@ void main() {
     }
 
     frag_color = vec4(final_color, 1.0);
-//    frag_color = vec4(calculateShadow(), 0.0, 0.0, 1.0);
-//    float layer = calculateShadow();
-//    if (layer == 0) {
-//        frag_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-//    }
-//    else if (layer == 1) {
-//        frag_color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-//    }
-//    else if (layer == 2) {
-//        frag_color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
-//    }
 }
 
 float calculateShadow() {
@@ -88,23 +77,22 @@ float calculateShadow() {
             break;
         }
     }
-//    return float(layer);
 
-    vec3 remapped_position = (fs_in.sunlight_space_position[layer].xyz / fs_in.sunlight_space_position[layer].w) * 0.5 + 0.5;
-    float bias = 0.0005 / (camera.csm_partition_depths[layer] * 0.5);
+    vec3 remapped_position =
+        (fs_in.sunlight_space_position[layer].xyz / fs_in.sunlight_space_position[layer].w) * 0.5 + 0.5;
+    float bias = (layer == 0) ? 0.0001 : 0.0005;
 
-    float sample_depth = texture(sunlight_shadow_map, vec3(remapped_position.xy, layer)).r;
-    return remapped_position.z - bias > sample_depth ? 0.0 : 1.0;
-//    // sample shadow map in 3x3 square around actual uv
-//    float shadow = 0.0;
-//    vec2 texel_size = 1.0 / textureSize(sunlight_shadow_map, 0);
-//    for (int x = -1; x <= 1; ++x) {
-//        for (int y = -1; y <= 1; ++y) {
-//            float sample_depth = texture(sunlight_shadow_map, remapped_position.xy + vec2(x, y) * texel_size).r;
-//            shadow += remapped_position.z - bias > sample_depth ? 1.0 : 0.0;
-//        }
-//    }
-//    return 1.0 - shadow / 9.0;
+    // sample shadow map in 3x3 square around uv
+    float shadow = 0.0;
+    vec2 texel_size = 1.0 / vec2(textureSize(sunlight_shadow_map, 0));
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float sample_depth = texture(sunlight_shadow_map,
+                                         vec3(remapped_position.xy + vec2(x, y) * texel_size, layer)).r;
+            shadow += remapped_position.z - bias > sample_depth ? 1.0 : 0.0;
+        }
+    }
+    return 1.0 - shadow / 9.0;
 }
 
 vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_color, float specular_factor) {
