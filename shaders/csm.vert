@@ -11,16 +11,10 @@ layout (binding = 0, std430) readonly buffer vertex_ssbo {
     Vertex data[];
 };
 
-layout (binding = 0, std140) uniform matrix_ubo {
-    mat4 projection;
-    mat4 view;
-    mat4 sunlight_space;
-};
-
 vec3 getPosition(int index);
 
 void main() {
-    gl_Position = sunlight_space * vec4(getPosition(gl_VertexID), 1.0);
+    gl_Position = vec4(getPosition(gl_VertexID), 1.0);
 }
 
 vec3 getPosition(int index) {

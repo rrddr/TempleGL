@@ -4,12 +4,14 @@ in VS_OUT {
     flat int material_index;
     smooth vec2 uv;
     smooth vec4 position;
-    smooth vec4 sunlight_space_position;
+    smooth vec4 view_space_position;
+    smooth vec4 sunlight_space_position[3];
     flat mat3 TBN;
 } fs_in;
 
 struct CameraParameters {
     vec4 position;
+    float csm_partition_depths[3];
 };
 struct Light {
     vec4 source;
@@ -24,7 +26,7 @@ layout (binding = 2, std430) readonly buffer light_ssbo {
 };
 
 layout (binding = 0) uniform sampler2DArray texture_array;
-layout (binding = 4) uniform sampler2D sunlight_shadow_map;
+layout (binding = 4) uniform sampler2DArray sunlight_shadow_map;
 
 const float SPECULAR_EXPONENT = 16.0;
 const float POINT_LIGHT_MAX_R = 7.0;
@@ -63,22 +65,46 @@ void main() {
     }
 
     frag_color = vec4(final_color, 1.0);
+//    frag_color = vec4(calculateShadow(), 0.0, 0.0, 1.0);
+//    float layer = calculateShadow();
+//    if (layer == 0) {
+//        frag_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+//    }
+//    else if (layer == 1) {
+//        frag_color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+//    }
+//    else if (layer == 2) {
+//        frag_color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+//    }
 }
 
 float calculateShadow() {
-    vec3 remapped_position = (fs_in.sunlight_space_position.xyz / fs_in.sunlight_space_position.w) * 0.5 + 0.5;
-    float bias = 0.0005;
-
-    // sample shadow map in 3x3 square around actual uv
-    float shadow = 0.0;
-    vec2 texel_size = 1.0 / textureSize(sunlight_shadow_map, 0);
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            float sample_depth = texture(sunlight_shadow_map, remapped_position.xy + vec2(x, y) * texel_size).r;
-            shadow += remapped_position.z - bias > sample_depth ? 1.0 : 0.0;
+    /// Determine cascade layer
+    int layer = 2;
+    for (int i = 1; i >= 0; --i) {
+        if (abs(fs_in.view_space_position.z) < camera.csm_partition_depths[i]) {
+            layer = i;
+        } else {
+            break;
         }
     }
-    return 1.0 - shadow / 9.0;
+//    return float(layer);
+
+    vec3 remapped_position = (fs_in.sunlight_space_position[layer].xyz / fs_in.sunlight_space_position[layer].w) * 0.5 + 0.5;
+    float bias = 0.0005;
+
+    float sample_depth = texture(sunlight_shadow_map, vec3(remapped_position.xy, layer)).r;
+    return remapped_position.z - bias > sample_depth ? 0.0 : 1.0;
+//    // sample shadow map in 3x3 square around actual uv
+//    float shadow = 0.0;
+//    vec2 texel_size = 1.0 / textureSize(sunlight_shadow_map, 0);
+//    for (int x = -1; x <= 1; ++x) {
+//        for (int y = -1; y <= 1; ++y) {
+//            float sample_depth = texture(sunlight_shadow_map, remapped_position.xy + vec2(x, y) * texel_size).r;
+//            shadow += remapped_position.z - bias > sample_depth ? 1.0 : 0.0;
+//        }
+//    }
+//    return 1.0 - shadow / 9.0;
 }
 
 vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_color, float specular_factor) {
@@ -91,5 +117,5 @@ vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_
 
 float calculateAttenuation(float intensity, float source_distance) {
     return intensity * pow(max(1.0 - pow(source_distance / POINT_LIGHT_MAX_R, 4.0), 0.0), 2.0)
-        * (1.0 / (pow(source_distance, 2.0), 0.1));
+    * (1.0 / (pow(source_distance, 2.0), 0.1));
 }

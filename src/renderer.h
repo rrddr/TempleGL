@@ -56,7 +56,7 @@ class Renderer : public Initializer<RendererConfig> {
   std::unique_ptr<Camera> camera_;
   std::unique_ptr<Model> temple_model_;
   std::unique_ptr<Skybox> skybox_;
-  std::unique_ptr<ShaderProgram> shadow_map_shader_;
+  std::unique_ptr<ShaderProgram> csm_shader_;
   std::unique_ptr<ShaderProgram> temple_shader_;
   std::unique_ptr<ShaderProgram> skybox_shader_;
   std::unique_ptr<ShaderProgram> image_shader_;
@@ -82,6 +82,7 @@ class Renderer : public Initializer<RendererConfig> {
   void scrollCallback(float y_offset) override;
 
   /// Helper methods
+  glm::mat4 getPartitionLightSpaceMatrix(float near_plane, float far_plane) const;
   static std::vector<glm::vec4> getFrustumCorners(const glm::mat4& projection, const glm::mat4& view);
   static void checkFramebufferErrors(const wrap::Framebuffer& framebuffer);
 
@@ -103,6 +104,7 @@ class Renderer : public Initializer<RendererConfig> {
       0.0125f
   };
   static constexpr GLsizei SHADOW_MAP_SIZE {16192};
+  static constexpr GLsizei CSM_NUM_CASCADES {3};
 
   static constexpr GLuint TEMPLE_TEXTURE_ARRAY_BINDING {0};
   static constexpr GLuint SKYBOX_CUBE_MAP_BINDING {1};

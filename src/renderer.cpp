@@ -81,9 +81,10 @@ void Renderer::renderSetup() {
       config_.model_path + "/skybox/nz.png"
   };
   skybox_ = std::make_unique<Skybox>(skybox_paths);
-  shadow_map_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                           .vertex(config_.shader_path + "/shadow.vert")
-                                                           .fragment(config_.shader_path + "/shadow.frag"));
+  csm_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
+                                                    .vertex(config_.shader_path + "/csm.vert")
+                                                    .geometry(config_.shader_path + "/csm.geom")
+                                                    .fragment(config_.shader_path + "/empty.frag"));
   temple_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                        .vertex(config_.shader_path + "/blinn_phong.vert")
                                                        .fragment(config_.shader_path + "/blinn_phong.frag"));
@@ -175,7 +176,7 @@ void Renderer::renderTerminate() {
 void Renderer::initializeMatrixBuffer() {
   glCreateBuffers(1, &state_.matrix_buffer.id);
   glNamedBufferStorage(state_.matrix_buffer.id,
-                       3 * sizeof(glm::mat4),
+                       (2 + CSM_NUM_CASCADES) * sizeof(glm::mat4),
                        nullptr,
                        GL_DYNAMIC_STORAGE_BIT);
   glNamedBufferSubData(state_.matrix_buffer.id,
@@ -199,6 +200,7 @@ void Renderer::initializeLightBuffer() {
   glNamedBufferStorage(state_.light_buffer.id,
                        static_cast<GLsizeiptr>(
                            sizeof(glm::vec4)
+                           + ceil(static_cast<float>(CSM_NUM_CASCADES) / 4.0f) * sizeof(glm::vec4)
                            + sizeof(Light)
                            + sizeof(glm::vec4) // sizeof(GLuint) + padding to maintain std430 alignment
                            + point_lights.size() * sizeof(Light)),
@@ -209,17 +211,20 @@ void Renderer::initializeLightBuffer() {
                        sizeof(glm::vec4),
                        glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
   glNamedBufferSubData(state_.light_buffer.id,
-                       sizeof(glm::vec4),
+                       sizeof(glm::vec4)
+                       + ceil(static_cast<float>(CSM_NUM_CASCADES) / 4.0f) * sizeof(glm::vec4),
                        sizeof(Light),
                        &SUNLIGHT);
   const auto num_point_lights = static_cast<GLuint>(point_lights.size());
   glNamedBufferSubData(state_.light_buffer.id,
                        sizeof(glm::vec4)
+                       + ceil(static_cast<float>(CSM_NUM_CASCADES) / 4.0f) * sizeof(glm::vec4)
                        + sizeof(Light),
                        sizeof(GLuint),
                        &num_point_lights);
   glNamedBufferSubData(state_.light_buffer.id,
                        sizeof(glm::vec4)
+                       + ceil(static_cast<float>(CSM_NUM_CASCADES) / 4.0f) * sizeof(glm::vec4)
                        + sizeof(Light)
                        + sizeof(glm::vec4),
                        static_cast<GLsizeiptr>(point_lights.size() * sizeof(Light)),
@@ -268,18 +273,19 @@ void Renderer::createSceneFramebufferAttachments() {
 }
 
 void Renderer::createShadowFramebufferAttachments() {
-  glCreateTextures(GL_TEXTURE_2D, 1, &objects_.shadow_fbo_depth.id);
+  glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &objects_.shadow_fbo_depth.id);
   glTextureParameteri(objects_.shadow_fbo_depth.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTextureParameteri(objects_.shadow_fbo_depth.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTextureParameteri(objects_.shadow_fbo_depth.id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
   glTextureParameteri(objects_.shadow_fbo_depth.id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
   constexpr float borderColor[] {1.0f, 1.0f, 1.0f, 1.0f};
   glTextureParameterfv(objects_.shadow_fbo_depth.id, GL_TEXTURE_BORDER_COLOR, borderColor);
-  glTextureStorage2D(objects_.shadow_fbo_depth.id,
+  glTextureStorage3D(objects_.shadow_fbo_depth.id,
                      1,
                      GL_DEPTH_COMPONENT32F,
                      SHADOW_MAP_SIZE,
-                     SHADOW_MAP_SIZE);
+                     SHADOW_MAP_SIZE,
+                     CSM_NUM_CASCADES);
   glNamedFramebufferTexture(objects_.shadow_fbo.id, GL_DEPTH_ATTACHMENT, objects_.shadow_fbo_depth.id, 0);
   checkFramebufferErrors(objects_.shadow_fbo);
 
@@ -287,44 +293,37 @@ void Renderer::createShadowFramebufferAttachments() {
 }
 
 void Renderer::generateShadowMap() {
-  /// Compute light view matrix
-  std::vector<glm::vec4> corners = getFrustumCorners(camera_->getProjectionMatrix(), camera_->getViewMatrix());
-  glm::vec3 frustum_center {0.0f};
-  for (const glm::vec4& corner : corners) {
-    frustum_center += glm::vec3(corner);
+  // use Practical Split Scheme algorithm to determine view frustum split positions
+  std::array<glm::mat4, CSM_NUM_CASCADES> light_space_matrices {};
+  const float ratio = pow(config_.camera_far_plane / config_.camera_near_plane, 1.0f / CSM_NUM_CASCADES);
+  const float step {(config_.camera_far_plane - config_.camera_near_plane) / CSM_NUM_CASCADES};
+  float split_log {config_.camera_near_plane};
+  float split_uni {config_.camera_near_plane};
+  float split_blend {config_.camera_near_plane};
+  float split_prev;
+  for (int i = 0; i < CSM_NUM_CASCADES; ++i) {
+    split_prev = split_blend;
+    split_log *= ratio;
+    split_uni += step;
+    split_blend = (split_log + split_uni) / 2.0f;
+    light_space_matrices[i] = getPartitionLightSpaceMatrix(split_prev, split_blend);
+    glNamedBufferSubData(state_.light_buffer.id,
+                         sizeof(glm::vec4)
+                         + i * sizeof(GLfloat),
+                         sizeof(GLfloat),
+                         &split_blend);
   }
-  frustum_center /= corners.size();
-  const glm::mat4 light_view = glm::lookAt(
-      frustum_center + glm::vec3(SUNLIGHT.source),
-      frustum_center,
-      glm::vec3(0.0f, 1.0f, 0.0f));
 
-  /// Compute light projection matrix
-  float min_x = std::numeric_limits<float>::max();
-  float min_y = std::numeric_limits<float>::max();
-  float max_x = std::numeric_limits<float>::lowest();
-  float max_y = std::numeric_limits<float>::lowest();
-  for (const glm::vec4& corner : corners) {
-    const glm::vec4 light_view_corner = light_view * corner;
-    min_x = glm::min(min_x, light_view_corner.x);
-    min_y = glm::min(min_y, light_view_corner.y);
-    max_x = glm::max(max_x, light_view_corner.x);
-    max_y = glm::max(max_y, light_view_corner.y);
-  }
-  const float z_depth = config_.camera_far_plane;
-  const glm::mat4 light_projection = glm::ortho(min_x, max_x, min_y, max_y, -z_depth, z_depth);
-  const glm::mat4 light_space = light_projection * light_view;
   glNamedBufferSubData(state_.matrix_buffer.id,
                        2 * sizeof(glm::mat4),
-                       sizeof(glm::mat4),
-                       glm::value_ptr(light_space));
+                       CSM_NUM_CASCADES * sizeof(glm::mat4),
+                       light_space_matrices.data());
 
   /// Generate
   glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
   glBindFramebuffer(GL_FRAMEBUFFER, objects_.shadow_fbo.id);
-  glNamedFramebufferDrawBuffer(objects_.shadow_fbo.id, GL_NONE);
   glClear(GL_DEPTH_BUFFER_BIT);
-  temple_model_->draw(shadow_map_shader_);
+  temple_model_->draw(csm_shader_);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, config_.window_width, config_.window_height);
 }
@@ -352,6 +351,42 @@ void Renderer::cursorPosCallback(float x_pos, float y_pos) {
 
 void Renderer::scrollCallback(float y_offset) {
   camera_->processMouseScroll(y_offset, state_.delta_time);
+}
+
+glm::mat4 Renderer::getPartitionLightSpaceMatrix(float near_plane, float far_plane) const {
+  /// Compute partition projection matrix
+  const glm::mat4 projection = glm::perspective(config_.camera_fov,
+                                                static_cast<float>(config_.window_width)
+                                                / static_cast<float>(config_.window_height),
+                                                near_plane,
+                                                far_plane);
+  /// Compute light view matrix
+  const std::vector<glm::vec4> corners = getFrustumCorners(projection, camera_->getViewMatrix());
+  glm::vec3 frustum_center {0.0f};
+  for (const glm::vec4& corner : corners) {
+    frustum_center += glm::vec3(corner);
+  }
+  frustum_center /= corners.size();
+  const glm::mat4 light_view = glm::lookAt(
+      frustum_center + glm::vec3(SUNLIGHT.source),
+      frustum_center,
+      glm::vec3(0.0f, 1.0f, 0.0f));
+
+  /// Compute light projection matrix
+  float min_x = std::numeric_limits<float>::max();
+  float min_y = std::numeric_limits<float>::max();
+  float max_x = std::numeric_limits<float>::lowest();
+  float max_y = std::numeric_limits<float>::lowest();
+  for (const glm::vec4& corner : corners) {
+    const glm::vec4 light_view_corner = light_view * corner;
+    min_x = glm::min(min_x, light_view_corner.x);
+    min_y = glm::min(min_y, light_view_corner.y);
+    max_x = glm::max(max_x, light_view_corner.x);
+    max_y = glm::max(max_y, light_view_corner.y);
+  }
+  const float z_depth = config_.camera_far_plane;
+  const glm::mat4 light_projection = glm::ortho(min_x, max_x, min_y, max_y, -z_depth, z_depth);
+  return light_projection * light_view;
 }
 
 std::vector<glm::vec4> Renderer::getFrustumCorners(const glm::mat4& projection, const glm::mat4& view) {

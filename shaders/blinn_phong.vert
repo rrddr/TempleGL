@@ -14,14 +14,15 @@ layout (binding = 0, std430) readonly buffer vertex_ssbo {
 layout (binding = 0, std140) uniform matrix_ubo {
     mat4 projection;
     mat4 view;
-    mat4 sunlight_space;
+    mat4 sunlight_space[3];
 };
 
 out VS_OUT {
     flat int material_index;
     smooth vec2 uv;
     smooth vec4 position;
-    smooth vec4 sunlight_space_position;
+    smooth vec4 view_space_position;
+    smooth vec4 sunlight_space_position[3];
     flat mat3 TBN;
 } vs_out;
 
@@ -33,10 +34,13 @@ void main() {
     vs_out.material_index = gl_BaseInstance;
     vs_out.uv = getUV(gl_VertexID);
     vs_out.position = vec4(getPosition(gl_VertexID), 1.0);
-    vs_out.sunlight_space_position = sunlight_space * vs_out.position;
+    vs_out.view_space_position = view * vs_out.position;
+    for (int i = 0; i < 3; ++i) {
+        vs_out.sunlight_space_position[i] = sunlight_space[i] * vs_out.position;
+    }
     vs_out.TBN = getTBN(gl_VertexID);
 
-    gl_Position = projection * view * vs_out.position;
+    gl_Position = projection * vs_out.view_space_position;
 }
 
 vec3 getPosition(int index) {

@@ -51,9 +51,10 @@ class ShaderProgram {
    * @param shader_type     One of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER,
    *                        GL_GEOMETRY_SHADER, GL_FRAGMENT_SHADER, or GL_COMPUTE_SHADER.
    *
-   * @returns   The id of the generated shader object. The object must be manually deleted using glDeleteShader().
+   * @returns   The id of the generated shader object.
    */
-  [[nodiscard]] static GLuint compileShader(const std::string& shader_string, GLenum shader_type);
+  [[nodiscard("Return value must be passed to glDeleteShader() for proper resource de-allocation.")]]
+  static GLuint compileShader(const std::string& shader_string, GLenum shader_type);
 
   /**
    * Sends an OpenGL debug message event if any errors occurred during most recent glCompileShader() or glLinkProgram()
