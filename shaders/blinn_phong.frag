@@ -91,7 +91,7 @@ float calculateShadow() {
 //    return float(layer);
 
     vec3 remapped_position = (fs_in.sunlight_space_position[layer].xyz / fs_in.sunlight_space_position[layer].w) * 0.5 + 0.5;
-    float bias = 0.0005;
+    float bias = 0.0005 / (camera.csm_partition_depths[layer] * 0.5);
 
     float sample_depth = texture(sunlight_shadow_map, vec3(remapped_position.xy, layer)).r;
     return remapped_position.z - bias > sample_depth ? 0.0 : 1.0;
