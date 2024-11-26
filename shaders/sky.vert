@@ -7,6 +7,7 @@ layout (binding = 1, std430) readonly buffer vertex_ssbo {
 layout (binding = 0, std140) uniform matrix_ubo {
     mat4 projection;
     mat4 view;
+    mat4 sunlight_transform[3];
 };
 
 out VS_OUT {
@@ -25,9 +26,7 @@ void main() {
 }
 
 vec3 getPosition(int index) {
-    return vec3(
-        data[index * 3],
-        data[index * 3 + 1],
-        data[index * 3 + 2]
-    );
+    return vec3(data[index * 3],
+                data[index * 3 + 1],
+                data[index * 3 + 2]);
 }

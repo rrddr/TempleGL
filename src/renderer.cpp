@@ -289,7 +289,7 @@ void Renderer::initializeCSMFramebuffer() {
 
 void Renderer::renderSunlightCSM() {
   /// Use Practical Split Scheme algorithm to determine view frustum split positions
-  std::array<glm::mat4, CSM_NUM_CASCADES> light_space_matrices {};
+  std::array<glm::mat4, CSM_NUM_CASCADES> light_matrices {};
   const float ratio {pow(config_.camera_far_plane / config_.camera_near_plane, 1.0f / CSM_NUM_CASCADES)};
   const float step {(config_.camera_far_plane - config_.camera_near_plane) / CSM_NUM_CASCADES};
   float split_log {config_.camera_near_plane};
@@ -301,7 +301,7 @@ void Renderer::renderSunlightCSM() {
     split_log *= ratio;
     split_uni += step;
     split_blend = (split_log + split_uni) / 2.0f;
-    light_space_matrices[i] = getSunlightMatrixForCascade(split_prev, split_blend);
+    light_matrices[i] = getSunlightMatrixForCascade(split_prev, split_blend);
     glNamedBufferSubData(objects_.light_data_buffer.id,
                          static_cast<GLintptr>(sizeof(glm::vec4)
                                                + i * sizeof(GLfloat)),
@@ -311,7 +311,7 @@ void Renderer::renderSunlightCSM() {
   glNamedBufferSubData(objects_.matrix_buffer.id,
                        2 * sizeof(glm::mat4),
                        CSM_NUM_CASCADES * sizeof(glm::mat4),
-                       light_space_matrices.data());
+                       light_matrices.data());
 
   /// Render shadow maps
   glViewport(0, 0, CSM_TEX_SIZE, CSM_TEX_SIZE);

@@ -18,9 +18,7 @@ void main() {
 }
 
 vec3 getPosition(int index) {
-    return vec3(
-        data[index].position[0],
-        data[index].position[1],
-        data[index].position[2]
-    );
+    return vec3(data[index].position[0],
+                data[index].position[1],
+                data[index].position[2]);
 }
