@@ -3,12 +3,14 @@
 Camera::Camera(glm::vec3 position, float yaw, float pitch, float speed, float max_speed,
                float fov, float aspect_ratio, float near_plane, float far_plane)
     : config_ {fov, aspect_ratio, near_plane, far_plane, max_speed},
-      state_ {position, {}, {}, {}, yaw, pitch, speed} {
-  updateCameraVectors(); // front, right, and up initialized here based on yaw and pitch
+      state_ {position, {}, {}, {}, yaw, pitch, speed, {}, {}} {
+  updateCameraVectors();
+  updateViewMatrix();
+  updateProjectionMatrix(aspect_ratio);
 }
 
 void Camera::processKeyboard(MoveDirection direction, float delta_time) {
-  float units_moved = state_.move_speed * delta_time;
+  const float units_moved {state_.move_speed * delta_time};
   switch (direction) {
     case FORWARD:
       state_.position += state_.front * units_moved;
@@ -44,10 +46,9 @@ void Camera::processMouseScroll(float offset, float delta_time) {
 }
 
 void Camera::updateCameraVectors() {
-  glm::vec3 new_front;
-  new_front.x = cos(state_.yaw) * cos(state_.pitch);
-  new_front.y = sin(state_.pitch);
-  new_front.z = sin(state_.yaw) * cos(state_.pitch);
+  const glm::vec3 new_front {cos(state_.yaw) * cos(state_.pitch),
+                             sin(state_.pitch),
+                             sin(state_.yaw) * cos(state_.pitch)};
   state_.front = glm::normalize(new_front);
   state_.right = glm::normalize(glm::cross(state_.front, WORLD_UP));
   state_.up = glm::normalize(glm::cross(state_.right, state_.front));

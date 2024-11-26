@@ -28,8 +28,7 @@ Model::Model(const std::string& obj_path) {
   processMeshes(scene->mMeshes, scene->mNumMeshes);
 }
 
-void Model::drawSetup(GLuint vertex_buffer_binding,
-                      GLuint texture_binding) const {
+void Model::drawSetup(GLuint vertex_buffer_binding, GLuint texture_binding) const {
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, vertex_buffer_binding, vertex_buffer_.id);
   glBindTextureUnit(texture_binding, texture_array_.id);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_.id);
@@ -39,7 +38,7 @@ void Model::drawSetup(GLuint vertex_buffer_binding,
 void Model::processMaterials(aiMaterial** materials, unsigned int num_materials) {
   glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array_.id);
   glTextureStorage3D(texture_array_.id, 1, GL_RGB8, TEX_SIZE, TEX_SIZE, static_cast<GLsizei>(num_materials) * 3);
-  GLint z_offset {0};
+  GLint layer {0};
   for (unsigned int i = 0; i < num_materials; ++i) {
     auto material_name = materials[i]->GetName().C_Str();
     if (std::find_if(LIGHT_MATERIAL_NAMES.begin(),
@@ -56,29 +55,29 @@ void Model::processMaterials(aiMaterial** materials, unsigned int num_materials)
                                          folder, material_name).c_str());
         path = source_dir_ + folder + "DefaultMaterial.png";
       }
-      help::fill3DTextureLayer(path, texture_array_, z_offset, TEX_SIZE, TEX_SIZE);
-      ++z_offset;
+      help::fill3DTextureLayer(path, texture_array_, layer, TEX_SIZE, TEX_SIZE);
+      ++layer;
     }
   }
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                       "Model::processMaterials() successful.");
+                       "(Model::processMaterials): Completed successfully.");
 }
 
 void Model::processMeshes(aiMesh** meshes, unsigned int num_meshes) {
   std::vector<Vertex> vertices;
   std::vector<GLuint> indices;
   std::vector<DrawElementsIndirectCommand> draw_commands;
+  draw_commands.reserve(num_meshes);
 
-  GLint base_vertex = 0;
-  GLuint first_index = 0;
-  Vertex vertex {};
+  GLint base_vertex {0};
+  GLuint first_index {0};
   for (int i = 0; i < num_meshes; ++i) {
-    aiMesh* mesh = meshes[i];
+    const aiMesh* mesh {meshes[i]};
     if (mesh->mPrimitiveTypes != (aiPrimitiveType_TRIANGLE | aiPrimitiveType_NGONEncodingFlag)) {
       glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
-                           "(Model::processMeshes): Detected point/line primitives in mesh, which is not allowed. "
+                           "(Model::processMeshes): Detected point/line primitives in mesh, which are not allowed. "
                            "This mesh will be skipped.");
       continue;
     }
@@ -89,46 +88,37 @@ void Model::processMeshes(aiMesh** meshes, unsigned int num_meshes) {
       aiVector3t<ai_real> average {0.0f};
       for (int j = 0; j < mesh->mNumVertices; ++j) {
 //        average += mesh->mVertices[j];
-          light_positions_.emplace_back(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.0f);
+//          light_positions_.emplace_back(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.0f);
       }
 //      average /= static_cast<float>(mesh->mNumVertices);
 //      light_positions_.emplace_back(average.x, average.y, average.z, 1.0f);
     }
 
-    /// Instead of storing meta-information somewhere, we use it to directly create a draw command for the mesh
+    /// Create the draw command for this mesh
     draw_commands.emplace_back(mesh->mNumFaces * 3, 1, first_index, base_vertex, mesh->mMaterialIndex);
 
     /// Append vertex data
     for (int j = 0; j < mesh->mNumVertices; ++j) {
-      vertex.position[0] = mesh->mVertices[j].x;
-      vertex.position[1] = mesh->mVertices[j].y;
-      vertex.position[2] = mesh->mVertices[j].z;
-
-      vertex.tangent[0] = mesh->mTangents[j].x;
-      vertex.tangent[1] = mesh->mTangents[j].y;
-      vertex.tangent[2] = mesh->mTangents[j].z;
-
-      vertex.bitangent[0] = mesh->mBitangents[j].x;
-      vertex.bitangent[1] = mesh->mBitangents[j].y;
-      vertex.bitangent[2] = mesh->mBitangents[j].z;
-
-      if (mesh->mTextureCoords[0]) {
-        vertex.uv[0] = mesh->mTextureCoords[0][j].x;
-        vertex.uv[1] = mesh->mTextureCoords[0][j].y;
-      } else {
-        vertex.uv[0] = 0.0;
-        vertex.uv[1] = 0.0;
-      }
-      vertices.push_back(vertex);
+      vertices.emplace_back(Vertex {{mesh->mVertices[j].x,
+                                     mesh->mVertices[j].y,
+                                     mesh->mVertices[j].z},
+                                    {mesh->mTangents[j].x,
+                                     mesh->mTangents[j].y,
+                                     mesh->mTangents[j].z},
+                                    {mesh->mBitangents[j].x,
+                                     mesh->mBitangents[j].y,
+                                     mesh->mBitangents[j].z},
+                                    {(mesh->mTextureCoords[0]) ? mesh->mTextureCoords[0][j].x : 0.0f,
+                                     (mesh->mTextureCoords[0]) ? mesh->mTextureCoords[0][j].y : 0.0f}});
       ++base_vertex;
     }
 
     /// Append index data
     for (int j = 0; j < mesh->mNumFaces; ++j) {
-      aiFace face = mesh->mFaces[j];
-      indices.push_back(face.mIndices[0]);
-      indices.push_back(face.mIndices[1]);
-      indices.push_back(face.mIndices[2]);
+      const aiFace& face {mesh->mFaces[j]};
+      indices.emplace_back(face.mIndices[0]);
+      indices.emplace_back(face.mIndices[1]);
+      indices.emplace_back(face.mIndices[2]);
       first_index += 3;
     }
   }
@@ -139,12 +129,11 @@ void Model::processMeshes(aiMesh** meshes, unsigned int num_meshes) {
   createBufferFromVector<DrawElementsIndirectCommand>(draw_command_buffer_, draw_commands);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                       "Model::processMeshes() successful.");
+                       "(Model::processMeshes): Completed successfully.");
 }
 
 template<typename T>
 void Model::createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector) {
   glCreateBuffers(1, &buffer.id);
-  glNamedBufferStorage(buffer.id, sizeof(T) * static_cast<GLsizeiptr>(vector.size()),
-                       vector.data(), GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferStorage(buffer.id, sizeof(T) * std::ssize(vector), vector.data(), GL_DYNAMIC_STORAGE_BIT);
 }

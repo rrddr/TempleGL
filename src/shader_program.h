@@ -2,9 +2,6 @@
 #define TEMPLEGL_SRC_SHADER_PROGRAM_H_
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include <string>
 
 /**
@@ -54,9 +51,10 @@ class ShaderProgram {
    * @param shader_type     One of GL_VERTEX_SHADER, GL_TESS_CONTROL_SHADER, GL_TESS_EVALUATION_SHADER,
    *                        GL_GEOMETRY_SHADER, GL_FRAGMENT_SHADER, or GL_COMPUTE_SHADER.
    *
-   * @returns   The id of the generated shader object. The object must be manually deleted using glDeleteShader().
+   * @returns   The id of the generated shader object.
    */
-  [[nodiscard]] static GLuint compileShader(const std::string& shader_string, GLenum shader_type);
+  [[nodiscard("Return value must be passed to glDeleteShader() for proper resource de-allocation.")]]
+  static GLuint compileShader(const std::string& shader_string, GLenum shader_type);
 
   /**
    * Sends an OpenGL debug message event if any errors occurred during most recent glCompileShader() or glLinkProgram()
@@ -68,5 +66,7 @@ class ShaderProgram {
    *                                When inspecting a program, this should be GL_SHADER.
    */
   static void checkCompileOrLinkErrors(GLuint program_or_shader, GLenum program_or_shader_type);
+
+  static constexpr GLsizei MAX_ERROR_LENGTH {1024};
 };
 #endif //TEMPLEGL_SRC_SHADER_PROGRAM_H_

@@ -22,8 +22,7 @@ class Skybox {
   /**
    * Binds GL_SHADER_STORAGE_BUFFER at vertex_buffer_binding. Binds cube_map_ to unit specified by texture_binding.
    */
-  void drawSetup(GLuint vertex_buffer_binding,
-                 GLuint texture_binding) const;
+  void drawSetup(GLuint vertex_buffer_binding, GLuint texture_binding) const;
   /**
    * Draws the skybox. drawSetup() must have been called at least once before this method.
    *

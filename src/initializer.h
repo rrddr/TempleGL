@@ -31,20 +31,18 @@ class Initializer {
  protected:
   CONFIG_TYPE config_ {};
   GLFWwindow* window_ {};             // raw pointer, as destruction is handled by glfwTerminate()
-  bool lock_gl_viewport_ {false};     // prevent unwanted calls to glViewport while rendering to non-default framebuffer
-  bool pending_gl_viewport_ {false};  // use this variable to queue a glViewport call while lock_gl_viewport_ is true
 
   /// Program stages
-  virtual void loadConfigYaml();        // Should initialize all fields in CONFIG_TYPE
+  virtual void loadConfigYaml();        // should initialize all fields in CONFIG_TYPE
   virtual void init() final;
   virtual void renderSetup() {}
   virtual void updateRenderState() {}
-  virtual void processKeyboardInput();  // Default implementation terminates program on ESC press
+  virtual void processKeyboardInput();  // default implementation terminates program on ESC press
   virtual void render() {}
   virtual void renderTerminate() {}
 
   /// Callbacks
-  virtual void framebufferSizeCallback(int width, int height);
+  virtual void framebufferSizeCallback(int width, int height); // default updates config_ and calls glViewport()
   virtual void cursorPosCallback(float x_pos, float y_pos) {}
   virtual void scrollCallback(float y_offset) {}
   static void glfwErrorCallback(int error_code, const char* description);

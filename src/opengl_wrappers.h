@@ -7,6 +7,9 @@
  * By wrapping the id of a created OpenGL object in the appropriate struct below, we can be sure it will be deleted
  * when it goes out of scope. Additionally, a debug message is sent when this happens, which is helpful for finding
  * the cause of otherwise very hard to diagnose bugs.
+ *
+ * Note: use std::unique_ptr when placing these objects inside containers to prevent undesired destructor calls
+ * (e.g. on std::vector reallocation).
  */
 namespace wrap {
   struct Texture {

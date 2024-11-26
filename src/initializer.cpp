@@ -1,7 +1,5 @@
 #include "initializer.h"
 
-#include <glad/glad.h>
-
 #include <yaml-cpp/yaml.h>
 #include <yaml-cpp/exceptions.h>
 
@@ -13,8 +11,8 @@ void Initializer<T>::run() {
   init();
   renderSetup();
   while (!glfwWindowShouldClose(window_)) {
-    updateRenderState();
     processKeyboardInput();
+    updateRenderState();
     render();
     glfwSwapBuffers(window_);
     glfwPollEvents();
@@ -34,15 +32,14 @@ void Initializer<T>::loadConfigYaml() {
     throw; // re-throw to main
   }
   try {
-    YAML::Node window = config_yaml["window"];
-    config_.window_name = window["name"].as<std::string>();
-    config_.window_width = window["width"].as<int>();
-    config_.window_height = window["height"].as<int>();
-    config_.window_initial_x_pos = window["initial_x_pos"].as<int>();
-    config_.window_initial_y_pos = window["initial_y_pos"].as<int>();
-    YAML::Node debug = config_yaml["debug"];
-    config_.debug_enabled = debug["enabled"].as<bool>();
-    auto debug_level_str = debug["level"].as<std::string>();
+    config_.window_name = config_yaml["window"]["name"].as<std::string>();
+    config_.window_width = config_yaml["window"]["width"].as<int>();
+    config_.window_height = config_yaml["window"]["height"].as<int>();
+    config_.window_initial_x_pos = config_yaml["window"]["initial_x_pos"].as<int>();
+    config_.window_initial_y_pos = config_yaml["window"]["initial_y_pos"].as<int>();
+
+    config_.debug_enabled = config_yaml["debug"]["enabled"].as<bool>();
+    const auto debug_level_str {config_yaml["debug"]["level"].as<std::string>()};
     if (debug_level_str == "all") { config_.debug_level = ALL; }
     else if (debug_level_str == "low") { config_.debug_level = LOW; }
     else if (debug_level_str == "medium") { config_.debug_level = MEDIUM; }
@@ -104,7 +101,7 @@ void Initializer<T>::init() {
   /// Configure OpenGL debug output
   int flags;
   glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-  if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) { // Check if GLFW created debug context (as expected if debug_enabled == true)
+  if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) { // Check if GLFW created debug context (expected if debug_enabled == true)
     std::cout << "INFO (Initializer::init): OpenGL debug output enabled." << std::endl;
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -122,7 +119,7 @@ void Initializer<T>::init() {
   }
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                       "Initializer::init() successful.");
+                       "(Initializer::init): Completed successfully.");
 }
 
 template<typename T>
@@ -136,11 +133,7 @@ template<typename T>
 void Initializer<T>::framebufferSizeCallback(int width, int height) {
   config_.window_width = width;
   config_.window_height = height;
-  if (!lock_gl_viewport_) {
-    glViewport(0, 0, width, height);
-  } else {
-    pending_gl_viewport_ = true;
-  }
+  glViewport(0, 0, width, height);
 }
 
 template<typename T>
