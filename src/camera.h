@@ -20,19 +20,21 @@ class Camera {
                   float near_plane = 0.1f,
                   float far_plane = 50.0f);
 
-  inline glm::mat4 getViewMatrix() const {
-    return glm::lookAt(state_.position,
-                       state_.position + state_.front,
-                       state_.up);
+  [[nodiscard]] inline glm::mat4 getViewMatrix() const { return state_.view_matrix; }
+  [[nodiscard]] inline glm::mat4 getProjectionMatrix() const { return state_.projection_matrix; }
+  [[nodiscard]] inline glm::vec3 getPosition() const { return state_.position; }
+  inline void updateViewMatrix() {
+    state_.view_matrix = glm::lookAt(state_.position,
+                                     state_.position + state_.front,
+                                     state_.up);
   }
-  inline glm::mat4 getProjectionMatrix() const {
-    return glm::perspective(config_.fov,
-                            config_.aspect_ratio,
-                            config_.near_plane,
-                            config_.far_plane);
+  inline void updateProjectionMatrix(float aspect_ratio) {
+    config_.aspect_ratio = aspect_ratio;
+    state_.projection_matrix = glm::perspective(config_.fov,
+                                                config_.aspect_ratio,
+                                                config_.near_plane,
+                                                config_.far_plane);
   }
-  inline glm::vec3 getPosition() const { return state_.position; }
-  inline void updateAspectRatio(float aspect_ratio) { config_.aspect_ratio = aspect_ratio; }
 
   enum MoveDirection { FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN };
 
@@ -77,14 +79,15 @@ class Camera {
     float yaw;
     float pitch;
     float move_speed;
+    glm::mat4 view_matrix;
+    glm::mat4 projection_matrix;
   };
   Config config_ {};
   State state_ {};
 
+  void updateCameraVectors();
+
   static constexpr glm::vec3 WORLD_UP {0.0f, 1.0f, 0.0f};
   static constexpr float HALF_PI {1.57079632679f};
-
-  void updateCameraVectors();
 };
-
 #endif //CAMERA_H_

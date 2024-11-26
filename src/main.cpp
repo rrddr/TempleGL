@@ -1,7 +1,6 @@
 #include "renderer.h"
 
 #include <iostream>
-#include <stdexcept>
 
 int main() {
   Renderer renderer{};

@@ -37,19 +37,19 @@ class Renderer : public Initializer<RendererConfig> {
     float mouse_y;
     float current_time;
     float delta_time;
-    wrap::Buffer matrix_buffer;
-    wrap::Buffer light_buffer;
   };
   struct OpenGLObjects {
-    wrap::VertexArray vao {};
+    wrap::VertexArray vao;
 
-    wrap::Framebuffer scene_fbo {};
-    wrap::Texture scene_fbo_color0 {};
-    wrap::Texture scene_fbo_color1 {};
-    wrap::Renderbuffer scene_fbo_depth {};
+    wrap::Framebuffer scene_fbo;
+    std::vector<std::unique_ptr<wrap::Texture>> scene_fbo_color;
+    wrap::Renderbuffer scene_fbo_depth;
 
-    wrap::Framebuffer shadow_fbo {};
-    wrap::Texture shadow_fbo_depth {};
+    wrap::Framebuffer csm_fbo;
+    wrap::Texture csm_fbo_depth;
+
+    wrap::Buffer matrix_buffer;
+    wrap::Buffer light_data_buffer;
   };
   State state_ {};
   OpenGLObjects objects_ {};
@@ -71,10 +71,10 @@ class Renderer : public Initializer<RendererConfig> {
 
   /// Sub-stages
   void initializeMatrixBuffer();
-  void initializeLightBuffer();
-  void createSceneFramebufferAttachments();
-  void createShadowFramebufferAttachments();
-  void generateShadowMap();
+  void initializeLightDataBuffer();
+  void createSceneFramebufferAttachments(); // may be called multiple times
+  void initializeCSMFramebuffer();
+  void renderSunlightCSM();
 
   /// Callbacks
   void framebufferSizeCallback(int width, int height) override;
@@ -82,7 +82,7 @@ class Renderer : public Initializer<RendererConfig> {
   void scrollCallback(float y_offset) override;
 
   /// Helper methods
-  glm::mat4 getPartitionLightSpaceMatrix(float near_plane, float far_plane) const;
+  [[nodiscard]] glm::mat4 getSunlightMatrixForCascade(float near_plane, float far_plane) const;
   static std::vector<glm::vec4> getFrustumCorners(const glm::mat4& projection, const glm::mat4& view);
   static void checkFramebufferErrors(const wrap::Framebuffer& framebuffer);
 
@@ -93,29 +93,29 @@ class Renderer : public Initializer<RendererConfig> {
     float intensity;
     float padding[3];   // padding to conform with std430 storage layout rules
   };
-  static constexpr Light SUNLIGHT {
-      {-0.4f, 0.9f, -1.0f, 0.0f},
-      {1.0f, 0.7f, 0.4f, 1.0f},
-      3.0f
-  };
-  static constexpr Light DEFAULT_POINT_LIGHT {
-      {0.0f, 0.0f, 0.0f, 1.0f},
-      {0.6f, 1.0f, 0.9f, 1.0f},
-      0.0125f
-  };
-  static constexpr GLsizei SHADOW_MAP_SIZE {16192};
-  static constexpr GLsizei CSM_NUM_CASCADES {3};
+  static constexpr Light SUNLIGHT {{-0.4f, 0.9f, -1.0f, 0.0f},
+                                   {1.0f, 0.7f, 0.4f, 1.0f},
+                                   3.0f};
+  static constexpr Light DEFAULT_POINT_LIGHT {{0.0f, 0.0f, 0.0f, 1.0f},
+                                              {0.6f, 1.0f, 0.9f, 1.0f},
+                                              0.0125f};
+  static constexpr GLsizei CSM_TEX_SIZE {16192};
+  static constexpr size_t CSM_NUM_CASCADES {3};
 
-  static constexpr GLuint TEMPLE_TEXTURE_ARRAY_BINDING {0};
-  static constexpr GLuint SKYBOX_CUBE_MAP_BINDING {1};
-  static constexpr GLuint IMAGE_SCENE_TEXTURE_BINDING {2};
-  static constexpr GLuint SKY_SCENE_TEXTURE_BINDING {3};
-  static constexpr GLuint SUNLIGHT_SHADOW_MAP_BINDING {4};
+  static constexpr size_t SCENE_FBO_NUM_COLOR_ATTACHMENTS {2};
+  static constexpr size_t SCENE_FBO_COLOR_INDEX_TEMPLE {0};
+  static constexpr size_t SCENE_FBO_COLOR_INDEX_SKY {1};
 
-  static constexpr GLuint TEMPLE_VERTEX_SSBO_BINDING {0};
-  static constexpr GLuint SKYBOX_VERTEX_SSBO_BINDING {1};
-  static constexpr GLuint LIGHT_SSBO_BINDING {2};
+  static constexpr GLuint TEX_BINDING_TEMPLE_ARRAY {0};
+  static constexpr GLuint TEX_BINDING_SKY_CUBE_MAP {1};
+  static constexpr GLuint TEX_BINDING_SCENE_TEMPLE {2};
+  static constexpr GLuint TEX_BINDING_SCENE_SKY {3};
+  static constexpr GLuint TEX_BINDING_CSM_ARRAY {4};
 
-  static constexpr GLuint MATRIX_UBO_BINDING {0};
+  static constexpr GLuint SSBO_BINDING_TEMPLE_VERTICES {0};
+  static constexpr GLuint SSBO_BINDING_SKY_VERTICES {1};
+  static constexpr GLuint SSBO_BINDING_LIGHT_DATA {2};
+
+  static constexpr GLuint UBO_BINDING_MATRIX {0};
 };
 #endif //TEMPLEGL_SRC_RENDERER_H_

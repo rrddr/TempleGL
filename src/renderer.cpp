@@ -19,28 +19,23 @@ void Renderer::loadConfigYaml() {
     throw; // re-throw to main
   }
   try {
-    const YAML::Node camera_values = config_yaml["camera"]["initial_values"];
-    const auto init_pos_vector = camera_values["position"].as<std::vector<float>>();
-    if (init_pos_vector.size() != 3) {
+    const auto initial_pos_vector =
+        config_yaml["camera"]["initial_values"]["position"].as<std::vector<float>>();
+    if (initial_pos_vector.size() != 3) {
       std::cerr << "WARNING (Renderer::loadConfigYaml): invalid setting in config.yaml, "
                 << "camera.initial_values.position must be an array of exactly 3 floats."
                 << "Defaulting to initial position [0.0, 0.0, 0.0]." << std::endl;
       config_.initial_camera_pos = glm::vec3(0.0f);
     } else {
-      config_.initial_camera_pos = glm::vec3(init_pos_vector[0], init_pos_vector[1], init_pos_vector[2]);
+      config_.initial_camera_pos = glm::vec3(initial_pos_vector[0], initial_pos_vector[1], initial_pos_vector[2]);
     }
-    config_.initial_camera_yaw = glm::radians(camera_values["yaw"].as<float>());
-    config_.initial_camera_pitch = glm::radians(camera_values["pitch"].as<float>());
-    config_.initial_camera_speed = camera_values["speed"].as<float>();
-
-    const YAML::Node camera_limits = config_yaml["camera"]["limits"];
-    config_.max_camera_speed = camera_limits["max_speed"].as<float>();
-
-    const YAML::Node camera_frustum = config_yaml["camera"]["view_frustum"];
-    config_.camera_fov = glm::radians(camera_frustum["fov"].as<float>());
-    config_.camera_near_plane = camera_frustum["near_plane"].as<float>();
-    config_.camera_far_plane = camera_frustum["far_plane"].as<float>();
-
+    config_.initial_camera_yaw = glm::radians(config_yaml["camera"]["initial_values"]["yaw"].as<float>());
+    config_.initial_camera_pitch = glm::radians(config_yaml["camera"]["initial_values"]["pitch"].as<float>());
+    config_.initial_camera_speed = config_yaml["camera"]["initial_values"]["speed"].as<float>();
+    config_.max_camera_speed = config_yaml["camera"]["limits"]["max_speed"].as<float>();
+    config_.camera_fov = glm::radians(config_yaml["camera"]["view_frustum"]["fov"].as<float>());
+    config_.camera_near_plane = config_yaml["camera"]["view_frustum"]["near_plane"].as<float>();
+    config_.camera_far_plane = config_yaml["camera"]["view_frustum"]["far_plane"].as<float>();
     config_.model_path = config_yaml["model"]["source_path"].as<std::string>();
     config_.shader_path = config_yaml["shader"]["source_path"].as<std::string>();
   }
@@ -61,7 +56,7 @@ void Renderer::renderSetup() {
 
   state_.first_time_receiving_mouse_input = true;
   state_.current_time = static_cast<float>(glfwGetTime());
-  const auto aspect_ratio = static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height);
+  const auto aspect_ratio {static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height)};
   camera_ = std::make_unique<Camera>(config_.initial_camera_pos,
                                      config_.initial_camera_yaw,
                                      config_.initial_camera_pitch,
@@ -95,29 +90,29 @@ void Renderer::renderSetup() {
                                                       .vertex(config_.shader_path + "/image_space.vert")
                                                       .fragment(config_.shader_path + "/image_space.frag"));
 
+  initializeMatrixBuffer();
+  initializeLightDataBuffer();
   glCreateFramebuffers(1, &objects_.scene_fbo.id);
   createSceneFramebufferAttachments();
-  glCreateFramebuffers(1, &objects_.shadow_fbo.id);
-  createShadowFramebufferAttachments();
-  initializeMatrixBuffer();
-  initializeLightBuffer();
+  initializeCSMFramebuffer();
 
-  temple_model_->drawSetup(TEMPLE_VERTEX_SSBO_BINDING, TEMPLE_TEXTURE_ARRAY_BINDING);
-  skybox_->drawSetup(SKYBOX_VERTEX_SSBO_BINDING, SKYBOX_CUBE_MAP_BINDING);
+  temple_model_->drawSetup(SSBO_BINDING_TEMPLE_VERTICES, TEX_BINDING_TEMPLE_ARRAY);
+  skybox_->drawSetup(SSBO_BINDING_SKY_VERTICES, TEX_BINDING_SKY_CUBE_MAP);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                       "Renderer::renderSetup() successful.");
+                       "(Renderer::renderSetup): Completed successfully.");
 }
 
 void Renderer::updateRenderState() {
-  const auto new_time = static_cast<float>(glfwGetTime());
+  const auto new_time {static_cast<float>(glfwGetTime())};
   state_.delta_time = new_time - state_.current_time;
   state_.current_time = new_time;
-  glNamedBufferSubData(state_.matrix_buffer.id,
+  camera_->updateViewMatrix();
+  glNamedBufferSubData(objects_.matrix_buffer.id,
                        sizeof(glm::mat4),
                        sizeof(glm::mat4),
                        glm::value_ptr(camera_->getViewMatrix()));
-  glNamedBufferSubData(state_.light_buffer.id,
+  glNamedBufferSubData(objects_.light_data_buffer.id,
                        0,
                        sizeof(glm::vec4),
                        glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
@@ -146,16 +141,16 @@ void Renderer::processKeyboardInput() {
 }
 
 void Renderer::render() {
-  /// Compute shadows
-  generateShadowMap();
+  /// Compute sunlight shadows
+  renderSunlightCSM();
 
   /// Render scene to framebuffer
   glBindFramebuffer(GL_FRAMEBUFFER, objects_.scene_fbo.id);
   glClear(GL_DEPTH_BUFFER_BIT);
-  glNamedFramebufferDrawBuffer(objects_.scene_fbo.id, GL_COLOR_ATTACHMENT0);
+  glNamedFramebufferDrawBuffer(objects_.scene_fbo.id, GL_COLOR_ATTACHMENT0 + SCENE_FBO_COLOR_INDEX_TEMPLE);
   glClear(GL_COLOR_BUFFER_BIT);
   temple_model_->draw(temple_shader_);
-  glNamedFramebufferDrawBuffer(objects_.scene_fbo.id, GL_COLOR_ATTACHMENT1);
+  glNamedFramebufferDrawBuffer(objects_.scene_fbo.id, GL_COLOR_ATTACHMENT0 + SCENE_FBO_COLOR_INDEX_SKY);
   glClear(GL_COLOR_BUFFER_BIT);
   skybox_->draw(skybox_shader_);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -170,93 +165,91 @@ void Renderer::render() {
 
 void Renderer::renderTerminate() {
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
-                       "Renderer::renderTerminate() successful.");
+                       "(Renderer::renderTerminate): Completed successfully.");
 }
 
 void Renderer::initializeMatrixBuffer() {
-  glCreateBuffers(1, &state_.matrix_buffer.id);
-  glNamedBufferStorage(state_.matrix_buffer.id,
+  glCreateBuffers(1, &objects_.matrix_buffer.id);
+  glNamedBufferStorage(objects_.matrix_buffer.id,
                        (2 + CSM_NUM_CASCADES) * sizeof(glm::mat4),
                        nullptr,
                        GL_DYNAMIC_STORAGE_BIT);
-  glNamedBufferSubData(state_.matrix_buffer.id,
+  glNamedBufferSubData(objects_.matrix_buffer.id,
                        0,
                        sizeof(glm::mat4),
                        glm::value_ptr(camera_->getProjectionMatrix()));
-  glNamedBufferSubData(state_.matrix_buffer.id,
+  glNamedBufferSubData(objects_.matrix_buffer.id,
                        sizeof(glm::mat4),
                        sizeof(glm::mat4),
                        glm::value_ptr(camera_->getViewMatrix()));
-  glBindBufferBase(GL_UNIFORM_BUFFER, MATRIX_UBO_BINDING, state_.matrix_buffer.id);
+  glBindBufferBase(GL_UNIFORM_BUFFER, UBO_BINDING_MATRIX, objects_.matrix_buffer.id);
 }
 
-void Renderer::initializeLightBuffer() {
+void Renderer::initializeLightDataBuffer() {
   std::vector<Light> point_lights;
-  for (glm::vec4 position : temple_model_->light_positions_) {
+  point_lights.reserve(temple_model_->light_positions_.size());
+  for (const glm::vec4& position : temple_model_->light_positions_) {
     point_lights.emplace_back(position, DEFAULT_POINT_LIGHT.color, DEFAULT_POINT_LIGHT.intensity);
   }
 
-  glCreateBuffers(1, &state_.light_buffer.id);
-  glNamedBufferStorage(state_.light_buffer.id,
-                       static_cast<GLsizeiptr>(
-                           sizeof(glm::vec4)
-                           + ceil(static_cast<float>(CSM_NUM_CASCADES) / 4.0f) * sizeof(glm::vec4)
-                           + sizeof(Light)
-                           + sizeof(glm::vec4) // sizeof(GLuint) + padding to maintain std430 alignment
-                           + point_lights.size() * sizeof(Light)),
+  glCreateBuffers(1, &objects_.light_data_buffer.id);
+  glNamedBufferStorage(objects_.light_data_buffer.id,
+                       static_cast<GLsizeiptr>(sizeof(glm::vec4)
+                                               + static_cast<size_t>(ceil(CSM_NUM_CASCADES / 4.0f)) * sizeof(glm::vec4)
+                                               + sizeof(Light)
+                                               + sizeof(glm::vec4)
+                                               + std::ssize(point_lights) * sizeof(Light)),
                        nullptr,
                        GL_DYNAMIC_STORAGE_BIT);
-  glNamedBufferSubData(state_.light_buffer.id,
+  glNamedBufferSubData(objects_.light_data_buffer.id,
                        0,
                        sizeof(glm::vec4),
                        glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
-  glNamedBufferSubData(state_.light_buffer.id,
-                       sizeof(glm::vec4)
-                       + ceil(static_cast<float>(CSM_NUM_CASCADES) / 4.0f) * sizeof(glm::vec4),
+  glNamedBufferSubData(objects_.light_data_buffer.id,
+                       static_cast<GLintptr>(sizeof(glm::vec4)
+                                             + static_cast<size_t>(ceil(CSM_NUM_CASCADES / 4.0f)) * sizeof(glm::vec4)),
                        sizeof(Light),
                        &SUNLIGHT);
-  const auto num_point_lights = static_cast<GLuint>(point_lights.size());
-  glNamedBufferSubData(state_.light_buffer.id,
-                       sizeof(glm::vec4)
-                       + ceil(static_cast<float>(CSM_NUM_CASCADES) / 4.0f) * sizeof(glm::vec4)
-                       + sizeof(Light),
+  const auto num_point_lights {static_cast<GLuint>(std::ssize(point_lights))};
+  glNamedBufferSubData(objects_.light_data_buffer.id,
+                       static_cast<GLintptr>(sizeof(glm::vec4)
+                                             + static_cast<size_t>(ceil(CSM_NUM_CASCADES / 4.0f)) * sizeof(glm::vec4)
+                                             + sizeof(Light)),
                        sizeof(GLuint),
                        &num_point_lights);
-  glNamedBufferSubData(state_.light_buffer.id,
-                       sizeof(glm::vec4)
-                       + ceil(static_cast<float>(CSM_NUM_CASCADES) / 4.0f) * sizeof(glm::vec4)
-                       + sizeof(Light)
-                       + sizeof(glm::vec4),
-                       static_cast<GLsizeiptr>(point_lights.size() * sizeof(Light)),
+  glNamedBufferSubData(objects_.light_data_buffer.id,
+                       static_cast<GLintptr>(sizeof(glm::vec4)
+                                             + static_cast<size_t>(ceil(CSM_NUM_CASCADES / 4.0f)) * sizeof(glm::vec4)
+                                             + sizeof(Light)
+                                             + sizeof(glm::vec4)),
+                       static_cast<GLsizeiptr>(std::ssize(point_lights) * sizeof(Light)),
                        point_lights.data());
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, LIGHT_SSBO_BINDING, state_.light_buffer.id);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_BINDING_LIGHT_DATA, objects_.light_data_buffer.id);
 }
 
 void Renderer::createSceneFramebufferAttachments() {
-  // Attachments must be recreated if window dimensions change
-  if (objects_.scene_fbo_color0.id) glDeleteTextures(1, &objects_.scene_fbo_color0.id);
-  if (objects_.scene_fbo_depth.id) glDeleteRenderbuffers(1, &objects_.scene_fbo_depth.id);
-
-  glCreateTextures(GL_TEXTURE_2D, 1, &objects_.scene_fbo_color0.id);
-  glTextureParameteri(objects_.scene_fbo_color0.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(objects_.scene_fbo_color0.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTextureStorage2D(objects_.scene_fbo_color0.id,
-                     1,
-                     GL_RGBA16F,
-                     config_.window_width,
-                     config_.window_height);
-  glNamedFramebufferTexture(objects_.scene_fbo.id, GL_COLOR_ATTACHMENT0, objects_.scene_fbo_color0.id, 0);
-
-  glCreateTextures(GL_TEXTURE_2D, 1, &objects_.scene_fbo_color1.id);
-  glTextureParameteri(objects_.scene_fbo_color1.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(objects_.scene_fbo_color1.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTextureStorage2D(objects_.scene_fbo_color1.id,
-                     1,
-                     GL_RGBA16F,
-                     config_.window_width,
-                     config_.window_height);
-  glNamedFramebufferTexture(objects_.scene_fbo.id, GL_COLOR_ATTACHMENT1, objects_.scene_fbo_color1.id, 0);
-
+  if (objects_.scene_fbo_color.empty()) {
+    objects_.scene_fbo_color.reserve(SCENE_FBO_NUM_COLOR_ATTACHMENTS);
+    for (int i = 0; i < SCENE_FBO_NUM_COLOR_ATTACHMENTS; ++i) {
+      objects_.scene_fbo_color.emplace_back(std::make_unique<wrap::Texture>(0));
+    }
+  }
+  for (size_t i = 0; i < SCENE_FBO_NUM_COLOR_ATTACHMENTS; ++i) {
+    glDeleteTextures(1, &objects_.scene_fbo_color[i]->id);
+    glCreateTextures(GL_TEXTURE_2D, 1, &objects_.scene_fbo_color[i]->id);
+    glTextureParameteri(objects_.scene_fbo_color[i]->id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(objects_.scene_fbo_color[i]->id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureStorage2D(objects_.scene_fbo_color[i]->id,
+                       1,
+                       GL_RGBA16F,
+                       config_.window_width,
+                       config_.window_height);
+    glNamedFramebufferTexture(objects_.scene_fbo.id,
+                              GL_COLOR_ATTACHMENT0 + i,
+                              objects_.scene_fbo_color[i]->id,
+                              0);
+  }
+  glDeleteRenderbuffers(1, &objects_.scene_fbo_depth.id);
   glCreateRenderbuffers(1, &objects_.scene_fbo_depth.id);
   glNamedRenderbufferStorage(objects_.scene_fbo_depth.id,
                              GL_DEPTH_COMPONENT32F,
@@ -266,62 +259,63 @@ void Renderer::createSceneFramebufferAttachments() {
                                  GL_DEPTH_ATTACHMENT,
                                  GL_RENDERBUFFER,
                                  objects_.scene_fbo_depth.id);
+
   checkFramebufferErrors(objects_.scene_fbo);
 
-  glBindTextureUnit(IMAGE_SCENE_TEXTURE_BINDING, objects_.scene_fbo_color0.id);
-  glBindTextureUnit(SKY_SCENE_TEXTURE_BINDING, objects_.scene_fbo_color1.id);
+  glBindTextureUnit(TEX_BINDING_SCENE_TEMPLE, objects_.scene_fbo_color[SCENE_FBO_COLOR_INDEX_TEMPLE]->id);
+  glBindTextureUnit(TEX_BINDING_SCENE_SKY, objects_.scene_fbo_color[SCENE_FBO_COLOR_INDEX_SKY]->id);
 }
 
-void Renderer::createShadowFramebufferAttachments() {
-  glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &objects_.shadow_fbo_depth.id);
-  glTextureParameteri(objects_.shadow_fbo_depth.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(objects_.shadow_fbo_depth.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTextureParameteri(objects_.shadow_fbo_depth.id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-  glTextureParameteri(objects_.shadow_fbo_depth.id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-  constexpr float borderColor[] {1.0f, 1.0f, 1.0f, 1.0f};
-  glTextureParameterfv(objects_.shadow_fbo_depth.id, GL_TEXTURE_BORDER_COLOR, borderColor);
-  glTextureStorage3D(objects_.shadow_fbo_depth.id,
+void Renderer::initializeCSMFramebuffer() {
+  glCreateFramebuffers(1, &objects_.csm_fbo.id);
+  glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &objects_.csm_fbo_depth.id);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  constexpr float border_color[] {1.0f, 1.0f, 1.0f, 1.0f};
+  glTextureParameterfv(objects_.csm_fbo_depth.id, GL_TEXTURE_BORDER_COLOR, border_color);
+  glTextureStorage3D(objects_.csm_fbo_depth.id,
                      1,
                      GL_DEPTH_COMPONENT32F,
-                     SHADOW_MAP_SIZE,
-                     SHADOW_MAP_SIZE,
+                     CSM_TEX_SIZE,
+                     CSM_TEX_SIZE,
                      CSM_NUM_CASCADES);
-  glNamedFramebufferTexture(objects_.shadow_fbo.id, GL_DEPTH_ATTACHMENT, objects_.shadow_fbo_depth.id, 0);
-  checkFramebufferErrors(objects_.shadow_fbo);
+  glNamedFramebufferTexture(objects_.csm_fbo.id, GL_DEPTH_ATTACHMENT, objects_.csm_fbo_depth.id, 0);
+  checkFramebufferErrors(objects_.csm_fbo);
 
-  glBindTextureUnit(SUNLIGHT_SHADOW_MAP_BINDING, objects_.shadow_fbo_depth.id);
+  glBindTextureUnit(TEX_BINDING_CSM_ARRAY, objects_.csm_fbo_depth.id);
 }
 
-void Renderer::generateShadowMap() {
-  // use Practical Split Scheme algorithm to determine view frustum split positions
+void Renderer::renderSunlightCSM() {
+  /// Use Practical Split Scheme algorithm to determine view frustum split positions
   std::array<glm::mat4, CSM_NUM_CASCADES> light_space_matrices {};
-  const float ratio = pow(config_.camera_far_plane / config_.camera_near_plane, 1.0f / CSM_NUM_CASCADES);
+  const float ratio {pow(config_.camera_far_plane / config_.camera_near_plane, 1.0f / CSM_NUM_CASCADES)};
   const float step {(config_.camera_far_plane - config_.camera_near_plane) / CSM_NUM_CASCADES};
   float split_log {config_.camera_near_plane};
   float split_uni {config_.camera_near_plane};
   float split_blend {config_.camera_near_plane};
   float split_prev;
-  for (int i = 0; i < CSM_NUM_CASCADES; ++i) {
+  for (size_t i = 0; i < CSM_NUM_CASCADES; ++i) {
     split_prev = split_blend;
     split_log *= ratio;
     split_uni += step;
     split_blend = (split_log + split_uni) / 2.0f;
-    light_space_matrices[i] = getPartitionLightSpaceMatrix(split_prev, split_blend);
-    glNamedBufferSubData(state_.light_buffer.id,
-                         sizeof(glm::vec4)
-                         + i * sizeof(GLfloat),
+    light_space_matrices[i] = getSunlightMatrixForCascade(split_prev, split_blend);
+    glNamedBufferSubData(objects_.light_data_buffer.id,
+                         static_cast<GLintptr>(sizeof(glm::vec4)
+                                               + i * sizeof(GLfloat)),
                          sizeof(GLfloat),
                          &split_blend);
   }
-
-  glNamedBufferSubData(state_.matrix_buffer.id,
+  glNamedBufferSubData(objects_.matrix_buffer.id,
                        2 * sizeof(glm::mat4),
                        CSM_NUM_CASCADES * sizeof(glm::mat4),
                        light_space_matrices.data());
 
-  /// Generate
-  glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-  glBindFramebuffer(GL_FRAMEBUFFER, objects_.shadow_fbo.id);
+  /// Render shadow maps
+  glViewport(0, 0, CSM_TEX_SIZE, CSM_TEX_SIZE);
+  glBindFramebuffer(GL_FRAMEBUFFER, objects_.csm_fbo.id);
   glClear(GL_DEPTH_BUFFER_BIT);
   temple_model_->draw(csm_shader_);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -331,8 +325,8 @@ void Renderer::generateShadowMap() {
 void Renderer::framebufferSizeCallback(int width, int height) {
   Initializer::framebufferSizeCallback(width, height);
   createSceneFramebufferAttachments();
-  camera_->updateAspectRatio(static_cast<float>(width) / static_cast<float>(height));
-  glNamedBufferSubData(state_.matrix_buffer.id,
+  camera_->updateProjectionMatrix(static_cast<float>(width) / static_cast<float>(height));
+  glNamedBufferSubData(objects_.matrix_buffer.id,
                        0,
                        sizeof(glm::mat4),
                        glm::value_ptr(camera_->getProjectionMatrix()));
@@ -353,60 +347,57 @@ void Renderer::scrollCallback(float y_offset) {
   camera_->processMouseScroll(y_offset, state_.delta_time);
 }
 
-glm::mat4 Renderer::getPartitionLightSpaceMatrix(float near_plane, float far_plane) const {
+glm::mat4 Renderer::getSunlightMatrixForCascade(float near_plane, float far_plane) const {
   /// Compute partition projection matrix
-  const glm::mat4 projection = glm::perspective(config_.camera_fov,
-                                                static_cast<float>(config_.window_width)
-                                                / static_cast<float>(config_.window_height),
-                                                near_plane,
-                                                far_plane);
+  const glm::mat4 projection {glm::perspective(config_.camera_fov,
+                                               static_cast<float>(config_.window_width)
+                                               / static_cast<float>(config_.window_height),
+                                               near_plane,
+                                               far_plane)};
   /// Compute light view matrix
-  const std::vector<glm::vec4> corners = getFrustumCorners(projection, camera_->getViewMatrix());
+  const std::vector<glm::vec4> corners {getFrustumCorners(projection, camera_->getViewMatrix())};
   glm::vec3 frustum_center {0.0f};
   for (const glm::vec4& corner : corners) {
     frustum_center += glm::vec3(corner);
   }
-  frustum_center /= corners.size();
-  const glm::mat4 light_view = glm::lookAt(
-      frustum_center + glm::vec3(SUNLIGHT.source),
-      frustum_center,
-      glm::vec3(0.0f, 1.0f, 0.0f));
+  frustum_center /= std::ssize(corners);
+  const glm::mat4 light_view {glm::lookAt(frustum_center + glm::vec3(SUNLIGHT.source),
+                                          frustum_center,
+                                          glm::vec3(0.0f, 1.0f, 0.0f))};
 
   /// Compute light projection matrix
-  float min_x = std::numeric_limits<float>::max();
-  float min_y = std::numeric_limits<float>::max();
-  float max_x = std::numeric_limits<float>::lowest();
-  float max_y = std::numeric_limits<float>::lowest();
+  float min_x {std::numeric_limits<float>::max()};
+  float min_y {std::numeric_limits<float>::max()};
+  float max_x {std::numeric_limits<float>::lowest()};
+  float max_y {std::numeric_limits<float>::lowest()};
   for (const glm::vec4& corner : corners) {
-    const glm::vec4 light_view_corner = light_view * corner;
+    const glm::vec4 light_view_corner {light_view * corner};
     min_x = glm::min(min_x, light_view_corner.x);
     min_y = glm::min(min_y, light_view_corner.y);
     max_x = glm::max(max_x, light_view_corner.x);
     max_y = glm::max(max_y, light_view_corner.y);
   }
-  const float z_depth = config_.camera_far_plane;
-  const glm::mat4 light_projection = glm::ortho(min_x, max_x, min_y, max_y, -z_depth, z_depth);
+  const float& z_depth {config_.camera_far_plane};
+  const glm::mat4 light_projection {glm::ortho(min_x, max_x, min_y, max_y, -z_depth, z_depth)};
   return light_projection * light_view;
 }
 
 std::vector<glm::vec4> Renderer::getFrustumCorners(const glm::mat4& projection, const glm::mat4& view) {
   std::vector<glm::vec4> corners;
-  const auto inverse = glm::inverse(projection * view);
+  const glm::mat4 inverse {glm::inverse(projection * view)};
   for (unsigned char b = 0x00; b < 0x08; ++b) {
-    const glm::vec4 ndc_corner {
-        static_cast<float>(b & 0x01) * 2.0f - 1.0f,
-        static_cast<float>((b >> 1) & 0x01) * 2.0f - 1.0f,
-        static_cast<float>((b >> 2) & 0x01) * 2.0f - 1.0f,
-        1.0f
-    };
-    const glm::vec4 world_space_corner = inverse * ndc_corner;
+    const glm::vec4 ndc_corner {static_cast<float>(b & 0x01) * 2.0f - 1.0f,
+                                static_cast<float>((b >> 1) & 0x01) * 2.0f - 1.0f,
+                                static_cast<float>((b >> 2) & 0x01) * 2.0f - 1.0f,
+                                1.0f};
+    const glm::vec4 world_space_corner {inverse * ndc_corner};
     corners.push_back(world_space_corner / world_space_corner.w);
   }
   return corners;
 }
 
 void Renderer::checkFramebufferErrors(const wrap::Framebuffer& framebuffer) {
-  GLenum status = glCheckNamedFramebufferStatus(framebuffer.id, GL_FRAMEBUFFER);
+  const GLenum status {glCheckNamedFramebufferStatus(framebuffer.id, GL_FRAMEBUFFER)};
   switch (status) {
     case GL_FRAMEBUFFER_COMPLETE:
       glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, framebuffer.id,

@@ -66,5 +66,7 @@ class ShaderProgram {
    *                                When inspecting a program, this should be GL_SHADER.
    */
   static void checkCompileOrLinkErrors(GLuint program_or_shader, GLenum program_or_shader_type);
+
+  static constexpr GLsizei MAX_ERROR_LENGTH {1024};
 };
 #endif //TEMPLEGL_SRC_SHADER_PROGRAM_H_

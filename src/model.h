@@ -39,8 +39,7 @@ class Model {
    * Binds GL_DRAW_INDIRECT_BUFFER, GL_ELEMENT_ARRAY_BUFFER and GL_SHADER_STORAGE_BUFFER at vertex_buffer_binging.
    * Binds texture_array_ to the texture unit specified by texture_binding.
    */
-  void drawSetup(GLuint vertex_buffer_binding,
-                 GLuint texture_binding) const;
+  void drawSetup(GLuint vertex_buffer_binding, GLuint texture_binding) const;
   /**
    * Draws the model. drawSetup() must have been called at least once before this method.
    *
