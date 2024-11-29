@@ -269,18 +269,20 @@ void Renderer::createSceneFramebufferAttachments() {
 void Renderer::initializeCSMFramebuffer() {
   glCreateFramebuffers(1, &objects_.csm_fbo.id);
   glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &objects_.csm_fbo_depth.id);
-  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-  constexpr float border_color[] {1.0f, 1.0f, 1.0f, 1.0f};
-  glTextureParameterfv(objects_.csm_fbo_depth.id, GL_TEXTURE_BORDER_COLOR, border_color);
   glTextureStorage3D(objects_.csm_fbo_depth.id,
                      1,
                      GL_DEPTH_COMPONENT32F,
                      CSM_TEX_SIZE,
                      CSM_TEX_SIZE,
                      CSM_NUM_CASCADES);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTextureParameteri(objects_.csm_fbo_depth.id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  constexpr float border_color[] {1.0f, 1.0f, 1.0f, 1.0f};
+  glTextureParameterfv(objects_.csm_fbo_depth.id, GL_TEXTURE_BORDER_COLOR, border_color);
   glNamedFramebufferTexture(objects_.csm_fbo.id, GL_DEPTH_ATTACHMENT, objects_.csm_fbo_depth.id, 0);
   checkFramebufferErrors(objects_.csm_fbo);
 

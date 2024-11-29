@@ -26,7 +26,7 @@ layout (binding = 2, std430) readonly buffer light_ssbo {
 };
 
 layout (binding = 0) uniform sampler2DArray model_texture_array;
-layout (binding = 4) uniform sampler2DArray sunlight_csm_array;
+layout (binding = 4) uniform sampler2DArrayShadow sunlight_csm_array;
 
 const float SPECULAR_EXPONENT = 16.0;
 const float POINT_LIGHT_MAX_R = 7.0;
@@ -77,18 +77,7 @@ float calculateShadow() {
     vec3 remapped_position =
         (fs_in.sunlight_space_position[layer].xyz / fs_in.sunlight_space_position[layer].w) * 0.5 + 0.5;
     float bias = (layer == 0) ? 0.0001 : 0.0005;
-
-    // sample shadow map in 3x3 square around uv
-    float shadow = 0.0;
-    vec2 texel_size = 1.0 / vec2(textureSize(sunlight_csm_array, 0));
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            float sample_depth = texture(sunlight_csm_array,
-                                         vec3(remapped_position.xy + vec2(x, y) * texel_size, layer)).r;
-            shadow += remapped_position.z - bias > sample_depth ? 1.0 : 0.0;
-        }
-    }
-    return 1.0 - shadow / 9.0;
+    return texture(sunlight_csm_array, vec4(remapped_position.xy, layer, remapped_position.z - bias));
 }
 
 vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_color, float specular_factor) {
