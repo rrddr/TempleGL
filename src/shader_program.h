@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include <string>
+#include <map>
 
 /**
  * Used to create and interact with an OpenGL shader program.
@@ -16,12 +17,12 @@ class ShaderProgram {
    public:
     explicit Stages(std::string source_directory) : source_dir_(std::move(source_directory)) {}
 
-    std::string vertex_shader_source;
-    std::string tessellation_control_shader_source;
-    std::string tessellation_evaluation_shader_source;
-    std::string geometry_shader_source;
-    std::string fragment_shader_source;
-    std::string compute_shader_source;
+    std::string vertex_shader_source_;
+    std::string tessellation_control_shader_source_;
+    std::string tessellation_evaluation_shader_source_;
+    std::string geometry_shader_source_;
+    std::string fragment_shader_source_;
+    std::string compute_shader_source_;
 
     // Utility methods to load source from file. Should be chained
     Stages& vertex(const std::string& filename);
@@ -33,19 +34,22 @@ class ShaderProgram {
 
    private:
     std::string source_dir_;
+    inline static std::map<std::string, std::string> include_cache_ {};
+
     std::string loadShaderSource(const std::string& filename);
+    std::string handleInclude(const std::string& include_line);
   };
 
   /**
    * Constructor compiles and links all shader stages. Empty stages are skipped.
    */
   explicit ShaderProgram(const Stages& stages);
-  ~ShaderProgram() { glDeleteProgram(program_id); }
+  ~ShaderProgram() { glDeleteProgram(program_id_); }
 
-  inline void use() const { glUseProgram(program_id); }
+  inline void use() const { glUseProgram(program_id_); }
 
  private:
-  GLuint program_id;
+  GLuint program_id_;
 
   /**
    * Compiles one stage of a shader program.

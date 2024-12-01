@@ -5,27 +5,27 @@
 #include <array>
 
 ShaderProgram::Stages& ShaderProgram::Stages::vertex(const std::string& filename) {
-  vertex_shader_source = loadShaderSource(filename);
+  vertex_shader_source_ = loadShaderSource(filename);
   return *this;
 }
 ShaderProgram::Stages& ShaderProgram::Stages::tessellationControl(const std::string& filename) {
-  tessellation_control_shader_source = loadShaderSource(filename);
+  tessellation_control_shader_source_ = loadShaderSource(filename);
   return *this;
 }
 ShaderProgram::Stages& ShaderProgram::Stages::tessellationEvaluation(const std::string& filename) {
-  tessellation_evaluation_shader_source = loadShaderSource(filename);
+  tessellation_evaluation_shader_source_ = loadShaderSource(filename);
   return *this;
 }
 ShaderProgram::Stages& ShaderProgram::Stages::geometry(const std::string& filename) {
-  geometry_shader_source = loadShaderSource(filename);
+  geometry_shader_source_ = loadShaderSource(filename);
   return *this;
 }
 ShaderProgram::Stages& ShaderProgram::Stages::fragment(const std::string& filename) {
-  fragment_shader_source = loadShaderSource(filename);
+  fragment_shader_source_ = loadShaderSource(filename);
   return *this;
 }
 ShaderProgram::Stages& ShaderProgram::Stages::compute(const std::string& filename) {
-  compute_shader_source = loadShaderSource(filename);
+  compute_shader_source_ = loadShaderSource(filename);
   return *this;
 }
 
@@ -37,7 +37,7 @@ std::string ShaderProgram::Stages::loadShaderSource(const std::string& filename)
     shader_file.open(source_dir_ + filename);
     for (std::string line; std::getline(shader_file, line);) {
       if (line.compare(0, 8, "#include") == 0) {
-        shader_source.append(loadShaderSource(line.substr(10, line.size() - 11)));
+        shader_source.append(handleInclude(line));
       } else {
         shader_source.append(line + "\n");
       }
@@ -53,26 +53,34 @@ std::string ShaderProgram::Stages::loadShaderSource(const std::string& filename)
   }
 }
 
+std::string ShaderProgram::Stages::handleInclude(const std::string& include_line) {
+  const std::string filename {include_line.substr(10, include_line.size() - 11)};
+  if (!include_cache_.contains(filename)) {
+    include_cache_.emplace(std::make_pair(filename, loadShaderSource(filename)));
+  }
+  return include_cache_[filename];
+}
+
 ShaderProgram::ShaderProgram(const ShaderProgram::Stages& stages) {
-  program_id = glCreateProgram();
+  program_id_ = glCreateProgram();
   const std::array<GLuint, 6> shader_ids {
-      compileShader(stages.vertex_shader_source, GL_VERTEX_SHADER),
-      compileShader(stages.tessellation_control_shader_source, GL_TESS_CONTROL_SHADER),
-      compileShader(stages.tessellation_evaluation_shader_source, GL_TESS_EVALUATION_SHADER),
-      compileShader(stages.geometry_shader_source, GL_GEOMETRY_SHADER),
-      compileShader(stages.fragment_shader_source, GL_FRAGMENT_SHADER),
-      compileShader(stages.compute_shader_source, GL_COMPUTE_SHADER)
+      compileShader(stages.vertex_shader_source_, GL_VERTEX_SHADER),
+      compileShader(stages.tessellation_control_shader_source_, GL_TESS_CONTROL_SHADER),
+      compileShader(stages.tessellation_evaluation_shader_source_, GL_TESS_EVALUATION_SHADER),
+      compileShader(stages.geometry_shader_source_, GL_GEOMETRY_SHADER),
+      compileShader(stages.fragment_shader_source_, GL_FRAGMENT_SHADER),
+      compileShader(stages.compute_shader_source_, GL_COMPUTE_SHADER)
   };
   for (const GLuint& shader_id : shader_ids) {
-    if (shader_id) glAttachShader(program_id, shader_id);
+    if (shader_id) glAttachShader(program_id_, shader_id);
   }
-  glLinkProgram(program_id);
-  checkCompileOrLinkErrors(program_id, GL_SHADER);
+  glLinkProgram(program_id_);
+  checkCompileOrLinkErrors(program_id_, GL_SHADER);
 
   // once the program is linked, the shader objects themselves are no longer needed
   for (const GLuint& shader_id : shader_ids) {
     if (shader_id) {
-      glDetachShader(program_id, shader_id);
+      glDetachShader(program_id_, shader_id);
       glDeleteShader(shader_id);
     }
   }
