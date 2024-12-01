@@ -67,34 +67,34 @@ void Renderer::renderSetup() {
                                      aspect_ratio,
                                      config_.camera_near_plane,
                                      config_.camera_far_plane);
-  temple_model_ = std::make_unique<Model>(config_.model_path + "/temple");
+  temple_model_ = std::make_unique<Model>(config_.model_path + "temple/");
   std::vector<std::string> skybox_paths {
-      config_.model_path + "/skybox/px.png",
-      config_.model_path + "/skybox/nx.png",
-      config_.model_path + "/skybox/py.png",
-      config_.model_path + "/skybox/ny.png",
-      config_.model_path + "/skybox/pz.png",
-      config_.model_path + "/skybox/nz.png"
+      config_.model_path + "skybox/px.png",
+      config_.model_path + "skybox/nx.png",
+      config_.model_path + "skybox/py.png",
+      config_.model_path + "skybox/ny.png",
+      config_.model_path + "skybox/pz.png",
+      config_.model_path + "skybox/nz.png"
   };
   skybox_ = std::make_unique<Skybox>(skybox_paths);
-  csm_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                    .vertex(config_.shader_path + "/csm.vert")
-                                                    .geometry(config_.shader_path + "/csm.geom")
-                                                    .fragment(config_.shader_path + "/empty.frag"));
-  temple_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                       .vertex(config_.shader_path + "/blinn_phong.vert")
-                                                       .fragment(config_.shader_path + "/blinn_phong.frag"));
-  skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                       .vertex(config_.shader_path + "/sky.vert")
-                                                       .fragment(config_.shader_path + "/sky.frag"));
-  image_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                      .vertex(config_.shader_path + "/image_space.vert")
-                                                      .fragment(config_.shader_path + "/image_space.frag"));
+  csm_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+                                                    .vertex("csm.vert")
+                                                    .geometry("csm.geom")
+                                                    .fragment("empty.frag"));
+  temple_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+                                                       .vertex("blinn_phong.vert")
+                                                       .fragment("blinn_phong.frag"));
+  skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+                                                       .vertex("sky.vert")
+                                                       .fragment("sky.frag"));
+  image_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+                                                      .vertex("image_space.vert")
+                                                      .fragment("image_space.frag"));
   if (config_.debug_enabled && config_.debug_render_light_positions) {
-    debug_light_positions_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
-                                                        .vertex(config_.shader_path + "/debug_lights.vert")
-                                                        .geometry(config_.shader_path + "/debug_lights.geom")
-                                                        .fragment(config_.shader_path + "/debug_lights.frag"));
+    debug_light_positions_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+                                                                        .vertex("debug_lights.vert")
+                                                                        .geometry("debug_lights.geom")
+                                                                        .fragment("debug_lights.frag"));
   }
 
   initializeMatrixBuffer();

@@ -21,6 +21,6 @@ camera:
     near_plane: 0.1
     far_plane: 75.0
 model:
-  source_path: ../model    # global, or relative to executable
+  source_path: ../model/    # global, or relative to executable
 shader:
-  source_path: ../shaders  # global, or relative to executable
+  source_path: ../shaders/  # global, or relative to executable

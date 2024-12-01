@@ -1,20 +1,10 @@
 //VERTEX_SHADER
 #version 460 core
-layout (binding = 1, std430) readonly buffer vertex_ssbo {
-    float data[108]; // This should match the hardcoded data in src/skybox.h
-};
-
-layout (binding = 0, std140) uniform matrix_ubo {
-    mat4 projection;
-    mat4 view;
-    mat4 sunlight_transform[3];
-};
-
+#include "ssbo_sky_vertex.glsl"
+#include "ubo_matrices.glsl"
 out VS_OUT {
     vec4 model_space_position;
 } vs_out;
-
-vec3 getPosition(int index);
 
 void main() {
     vs_out.model_space_position = vec4(getPosition(gl_VertexID), 1.0);
@@ -23,10 +13,4 @@ void main() {
     vec4 clip_space_position = projection * view_rotation * vs_out.model_space_position;
 
     gl_Position = clip_space_position.xyww; // depth testing trick
-}
-
-vec3 getPosition(int index) {
-    return vec3(data[index * 3],
-                data[index * 3 + 1],
-                data[index * 3 + 2]);
 }

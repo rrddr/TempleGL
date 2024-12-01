@@ -14,6 +14,8 @@ class ShaderProgram {
    */
   class Stages {
    public:
+    explicit Stages(std::string source_directory) : source_dir_(std::move(source_directory)) {}
+
     std::string vertex_shader_source;
     std::string tessellation_control_shader_source;
     std::string tessellation_evaluation_shader_source;
@@ -22,15 +24,16 @@ class ShaderProgram {
     std::string compute_shader_source;
 
     // Utility methods to load source from file. Should be chained
-    Stages& vertex(const std::string& shader_path);
-    Stages& tessellationControl(const std::string& shader_path);
-    Stages& tessellationEvaluation(const std::string& shader_path);
-    Stages& geometry(const std::string& shader_path);
-    Stages& fragment(const std::string& shader_path);
-    Stages& compute(const std::string& shader_path);
+    Stages& vertex(const std::string& filename);
+    Stages& tessellationControl(const std::string& filename);
+    Stages& tessellationEvaluation(const std::string& filename);
+    Stages& geometry(const std::string& filename);
+    Stages& fragment(const std::string& filename);
+    Stages& compute(const std::string& filename);
 
    private:
-    static std::string loadShaderSource(const std::string& shader_path);
+    std::string source_dir_;
+    std::string loadShaderSource(const std::string& filename);
   };
 
   /**

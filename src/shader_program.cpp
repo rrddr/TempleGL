@@ -4,45 +4,51 @@
 #include <format>
 #include <array>
 
-ShaderProgram::Stages& ShaderProgram::Stages::vertex(const std::string& shader_path) {
-  vertex_shader_source = loadShaderSource(shader_path);
+ShaderProgram::Stages& ShaderProgram::Stages::vertex(const std::string& filename) {
+  vertex_shader_source = loadShaderSource(filename);
   return *this;
 }
-ShaderProgram::Stages& ShaderProgram::Stages::tessellationControl(const std::string& shader_path) {
-  tessellation_control_shader_source = loadShaderSource(shader_path);
+ShaderProgram::Stages& ShaderProgram::Stages::tessellationControl(const std::string& filename) {
+  tessellation_control_shader_source = loadShaderSource(filename);
   return *this;
 }
-ShaderProgram::Stages& ShaderProgram::Stages::tessellationEvaluation(const std::string& shader_path) {
-  tessellation_evaluation_shader_source = loadShaderSource(shader_path);
+ShaderProgram::Stages& ShaderProgram::Stages::tessellationEvaluation(const std::string& filename) {
+  tessellation_evaluation_shader_source = loadShaderSource(filename);
   return *this;
 }
-ShaderProgram::Stages& ShaderProgram::Stages::geometry(const std::string& shader_path) {
-  geometry_shader_source = loadShaderSource(shader_path);
+ShaderProgram::Stages& ShaderProgram::Stages::geometry(const std::string& filename) {
+  geometry_shader_source = loadShaderSource(filename);
   return *this;
 }
-ShaderProgram::Stages& ShaderProgram::Stages::fragment(const std::string& shader_path) {
-  fragment_shader_source = loadShaderSource(shader_path);
+ShaderProgram::Stages& ShaderProgram::Stages::fragment(const std::string& filename) {
+  fragment_shader_source = loadShaderSource(filename);
   return *this;
 }
-ShaderProgram::Stages& ShaderProgram::Stages::compute(const std::string& shader_path) {
-  compute_shader_source = loadShaderSource(shader_path);
+ShaderProgram::Stages& ShaderProgram::Stages::compute(const std::string& filename) {
+  compute_shader_source = loadShaderSource(filename);
   return *this;
 }
 
-std::string ShaderProgram::Stages::loadShaderSource(const std::string& shader_path) {
+std::string ShaderProgram::Stages::loadShaderSource(const std::string& filename) {
   std::ifstream shader_file;
-  shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+  shader_file.exceptions(std::ifstream::badbit);
   std::string shader_source;
   try {
-    shader_file.open(shader_path);
-    shader_source.assign(std::istreambuf_iterator<char>(shader_file), std::istreambuf_iterator<char>());
+    shader_file.open(source_dir_ + filename);
+    for (std::string line; std::getline(shader_file, line);) {
+      if (line.compare(0, 8, "#include") == 0) {
+        shader_source.append(loadShaderSource(line.substr(10, line.size() - 11)));
+      } else {
+        shader_source.append(line + "\n");
+      }
+    }
     shader_file.close();
     return shader_source;
   }
   catch (std::ifstream::failure& e) {
     glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1,
                          std::format("(ShaderProgram::Stages::loadShaderSource): Failed to read file from path '{}'",
-                                     shader_path).c_str());
+                                     source_dir_ + filename).c_str());
     return "";
   }
 }

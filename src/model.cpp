@@ -20,7 +20,7 @@ void Model::drawSetup(GLuint vertex_buffer_binding, GLuint texture_binding) cons
 }
 
 void Model::loadModelData() {
-  const std::string path {source_dir_ + "/model.obj"};
+  const std::string path {source_dir_ + "model.obj"};
   const aiScene* scene {importer_.ReadFile(path.c_str(),
                                           aiProcess_FlipUVs |
                                           aiProcess_Triangulate |
@@ -34,7 +34,7 @@ void Model::loadModelData() {
 }
 
 void Model::loadLightData() {
-  const std::string path {source_dir_ + "/lights.obj"};
+  const std::string path {source_dir_ + "lights.obj"};
   if (!std::filesystem::exists(path)) return;
   const aiScene* scene {importer_.ReadFile(path.c_str(), 0)};
   checkAssimpSceneErrors(scene, path);
@@ -61,7 +61,7 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
   GLint layer {0};
   for (unsigned int i = 0; i < num_materials; ++i) {
     auto material_name {materials[i]->GetName().C_Str()};
-    for (auto folder : {"/diffuse/", "/normal/", "/specular/"}) {
+    for (auto folder : {"diffuse/", "normal/", "specular/"}) {
       std::string path {source_dir_ + folder + material_name + ".png"};
       if (!std::filesystem::exists(path)) {
         glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,

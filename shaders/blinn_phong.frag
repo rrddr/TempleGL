@@ -1,5 +1,7 @@
 //FRAGMENT_SHADER
 #version 460 core
+#include "ssbo_light_data.glsl"
+
 in VS_OUT {
     flat int material_index;
     smooth vec2 uv;
@@ -8,22 +10,6 @@ in VS_OUT {
     smooth vec4 sunlight_space_position[3];
     flat mat3 TBN;
 } fs_in;
-
-struct CameraParameters {
-    vec4 world_space_position;
-    float csm_partition_depths[3];
-};
-struct Light {
-    vec4 source;
-    vec4 color;
-    float intensity;
-};
-layout (binding = 2, std430) readonly buffer light_ssbo {
-    CameraParameters camera;
-    Light sunlight;
-    uint num_point_lights;
-    Light point_lights[];
-};
 
 layout (binding = 0) uniform sampler2DArray model_texture_array;
 layout (binding = 4) uniform sampler2DArrayShadow sunlight_csm_array;
@@ -45,7 +31,7 @@ void main() {
 
     vec3 diffuse_color = pow(raw_diffuse, vec3(2.2));
     float specular_factor = 1.0 - pow(1.0 - raw_specular, 2.0);
-    vec3 N = fs_in.TBN * normalize(raw_normal * 2.0 - 1.0);
+    vec3 N = normalize(fs_in.TBN * (raw_normal * 2.0 - 1.0));
     vec3 V = normalize(camera.world_space_position.xyz - fs_in.world_space_position.xyz);
 
     vec3 final_color = AMBIENT_LIGHT * diffuse_color;
