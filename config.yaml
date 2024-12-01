@@ -7,6 +7,7 @@ window:
 debug:
   enabled: true
   level: low    # <all | low | medium | high>  Minimum severity of debug messages that should be shown.
+  render_light_positions: false
 camera:
   initial_values:
     position: [-20.0, 20.0, 0.0]

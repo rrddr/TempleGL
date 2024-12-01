@@ -25,6 +25,7 @@ struct RendererConfig : MinimalInitializerConfig {
   float camera_far_plane;
   std::string model_path;
   std::string shader_path;
+  bool debug_render_light_positions;
 };
 
 /**
@@ -60,6 +61,7 @@ class Renderer : public Initializer<RendererConfig> {
   std::unique_ptr<ShaderProgram> temple_shader_;
   std::unique_ptr<ShaderProgram> skybox_shader_;
   std::unique_ptr<ShaderProgram> image_shader_;
+  std::unique_ptr<ShaderProgram> debug_light_positions_shader_;
 
   /// Main program stages
   void loadConfigYaml() override;
@@ -98,7 +100,7 @@ class Renderer : public Initializer<RendererConfig> {
                                    3.0f};
   static constexpr Light DEFAULT_POINT_LIGHT {{0.0f, 0.0f, 0.0f, 1.0f},
                                               {0.6f, 1.0f, 0.9f, 1.0f},
-                                              0.0125f};
+                                              0.05f};
   static constexpr GLsizei CSM_TEX_SIZE {16192};
   static constexpr size_t CSM_NUM_CASCADES {3};
 

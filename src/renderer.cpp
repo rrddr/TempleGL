@@ -38,6 +38,7 @@ void Renderer::loadConfigYaml() {
     config_.camera_far_plane = config_yaml["camera"]["view_frustum"]["far_plane"].as<float>();
     config_.model_path = config_yaml["model"]["source_path"].as<std::string>();
     config_.shader_path = config_yaml["shader"]["source_path"].as<std::string>();
+    config_.debug_render_light_positions = config_yaml["debug"]["render_light_positions"].as<bool>();
   }
   catch (YAML::Exception& e) {
     std::cerr << "ERROR (Renderer::loadConfigYaml): Failed to parse config.yaml." << std::endl;
@@ -66,7 +67,7 @@ void Renderer::renderSetup() {
                                      aspect_ratio,
                                      config_.camera_near_plane,
                                      config_.camera_far_plane);
-  temple_model_ = std::make_unique<Model>(config_.model_path + "/temple/minecraft.obj");
+  temple_model_ = std::make_unique<Model>(config_.model_path + "/temple");
   std::vector<std::string> skybox_paths {
       config_.model_path + "/skybox/px.png",
       config_.model_path + "/skybox/nx.png",
@@ -89,6 +90,12 @@ void Renderer::renderSetup() {
   image_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
                                                       .vertex(config_.shader_path + "/image_space.vert")
                                                       .fragment(config_.shader_path + "/image_space.frag"));
+  if (config_.debug_enabled && config_.debug_render_light_positions) {
+    debug_light_positions_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages()
+                                                        .vertex(config_.shader_path + "/debug_lights.vert")
+                                                        .geometry(config_.shader_path + "/debug_lights.geom")
+                                                        .fragment(config_.shader_path + "/debug_lights.frag"));
+  }
 
   initializeMatrixBuffer();
   initializeLightDataBuffer();
@@ -160,6 +167,10 @@ void Renderer::render() {
   image_shader_->use();
   glDisable(GL_DEPTH_TEST);
   glDrawArrays(GL_TRIANGLES, 0, 3);
+  if (config_.debug_enabled && config_.debug_render_light_positions) {
+    debug_light_positions_shader_->use();
+    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(std::ssize(temple_model_->light_positions_)));
+  }
   glEnable(GL_DEPTH_TEST);
 }
 
