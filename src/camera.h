@@ -9,27 +9,25 @@
  *  view and projection matrices.
  */
 class Camera {
- public:
+public:
   explicit Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
-                  float yaw = 0.0f,
-                  float pitch = 0.0f,
-                  float speed = 1.0f,
-                  float max_speed = 30.0f,
-                  float fov = 1.5708f,
+                  float yaw          = 0.0f,
+                  float pitch        = 0.0f,
+                  float speed        = 1.0f,
+                  float max_speed    = 30.0f,
+                  float fov          = 1.5708f,
                   float aspect_ratio = 1.7778f,
-                  float near_plane = 0.1f,
-                  float far_plane = 50.0f);
+                  float near_plane   = 0.1f,
+                  float far_plane    = 50.0f);
 
-  [[nodiscard]] inline glm::mat4 getViewMatrix() const { return state_.view_matrix; }
-  [[nodiscard]] inline glm::mat4 getProjectionMatrix() const { return state_.projection_matrix; }
-  [[nodiscard]] inline glm::vec3 getPosition() const { return state_.position; }
-  inline void updateViewMatrix() {
-    state_.view_matrix = glm::lookAt(state_.position,
-                                     state_.position + state_.front,
-                                     state_.up);
+  [[nodiscard]] glm::mat4 getViewMatrix() const { return state_.view_matrix; }
+  [[nodiscard]] glm::mat4 getProjectionMatrix() const { return state_.projection_matrix; }
+  [[nodiscard]] glm::vec3 getPosition() const { return state_.position; }
+  void updateViewMatrix() {
+    state_.view_matrix = glm::lookAt(state_.position, state_.position + state_.front, state_.up);
   }
-  inline void updateProjectionMatrix(float aspect_ratio) {
-    config_.aspect_ratio = aspect_ratio;
+  void updateProjectionMatrix(const float aspect_ratio) {
+    config_.aspect_ratio     = aspect_ratio;
     state_.projection_matrix = glm::perspective(config_.fov,
                                                 config_.aspect_ratio,
                                                 config_.near_plane,
@@ -63,7 +61,7 @@ class Camera {
    */
   void processMouseScroll(float offset, float delta_time);
 
- private:
+private:
   struct Config {
     float fov;
     float aspect_ratio;
@@ -82,6 +80,7 @@ class Camera {
     glm::mat4 view_matrix;
     glm::mat4 projection_matrix;
   };
+
   Config config_ {};
   State state_ {};
 

@@ -2,6 +2,7 @@
 
 #include <yaml-cpp/yaml.h>
 #include <yaml-cpp/exceptions.h>
+#include <cmath>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
@@ -13,14 +14,13 @@ void Renderer::loadConfigYaml() {
   YAML::Node config_yaml;
   try {
     config_yaml = YAML::LoadFile("../config.yaml");
-  }
-  catch (YAML::Exception& e) {
+  } catch (YAML::Exception& e) {
     std::cerr << "ERROR (Renderer::loadConfigYaml): Failed to load config.yaml." << std::endl;
     throw; // re-throw to main
   }
   try {
     const auto initial_pos_vector =
-        config_yaml["camera"]["initial_values"]["position"].as<std::vector<float>>();
+      config_yaml["camera"]["initial_values"]["position"].as<std::vector<float>>();
     if (initial_pos_vector.size() != 3) {
       std::cerr << "WARNING (Renderer::loadConfigYaml): invalid setting in config.yaml, "
                 << "camera.initial_values.position must be an array of exactly 3 floats."
@@ -29,18 +29,17 @@ void Renderer::loadConfigYaml() {
     } else {
       config_.initial_camera_pos = glm::vec3(initial_pos_vector[0], initial_pos_vector[1], initial_pos_vector[2]);
     }
-    config_.initial_camera_yaw = glm::radians(config_yaml["camera"]["initial_values"]["yaw"].as<float>());
-    config_.initial_camera_pitch = glm::radians(config_yaml["camera"]["initial_values"]["pitch"].as<float>());
-    config_.initial_camera_speed = config_yaml["camera"]["initial_values"]["speed"].as<float>();
-    config_.max_camera_speed = config_yaml["camera"]["limits"]["max_speed"].as<float>();
-    config_.camera_fov = glm::radians(config_yaml["camera"]["view_frustum"]["fov"].as<float>());
-    config_.camera_near_plane = config_yaml["camera"]["view_frustum"]["near_plane"].as<float>();
-    config_.camera_far_plane = config_yaml["camera"]["view_frustum"]["far_plane"].as<float>();
-    config_.model_path = config_yaml["model"]["source_path"].as<std::string>();
-    config_.shader_path = config_yaml["shader"]["source_path"].as<std::string>();
+    config_.initial_camera_yaw           = glm::radians(config_yaml["camera"]["initial_values"]["yaw"].as<float>());
+    config_.initial_camera_pitch         = glm::radians(config_yaml["camera"]["initial_values"]["pitch"].as<float>());
+    config_.initial_camera_speed         = config_yaml["camera"]["initial_values"]["speed"].as<float>();
+    config_.max_camera_speed             = config_yaml["camera"]["limits"]["max_speed"].as<float>();
+    config_.camera_fov                   = glm::radians(config_yaml["camera"]["view_frustum"]["fov"].as<float>());
+    config_.camera_near_plane            = config_yaml["camera"]["view_frustum"]["near_plane"].as<float>();
+    config_.camera_far_plane             = config_yaml["camera"]["view_frustum"]["far_plane"].as<float>();
+    config_.model_path                   = config_yaml["model"]["source_path"].as<std::string>();
+    config_.shader_path                  = config_yaml["shader"]["source_path"].as<std::string>();
     config_.debug_render_light_positions = config_yaml["debug"]["render_light_positions"].as<bool>();
-  }
-  catch (YAML::Exception& e) {
+  } catch (YAML::Exception& e) {
     std::cerr << "ERROR (Renderer::loadConfigYaml): Failed to parse config.yaml." << std::endl;
     throw; // re-throw to main
   }
@@ -56,7 +55,7 @@ void Renderer::renderSetup() {
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
   state_.first_time_receiving_mouse_input = true;
-  state_.current_time = static_cast<float>(glfwGetTime());
+  state_.current_time                     = static_cast<float>(glfwGetTime());
   const auto aspect_ratio {static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height)};
   camera_ = std::make_unique<Camera>(config_.initial_camera_pos,
                                      config_.initial_camera_yaw,
@@ -68,33 +67,33 @@ void Renderer::renderSetup() {
                                      config_.camera_near_plane,
                                      config_.camera_far_plane);
   temple_model_ = std::make_unique<Model>(config_.model_path + "temple/");
-  std::vector<std::string> skybox_paths {
-      config_.model_path + "skybox/px.png",
-      config_.model_path + "skybox/nx.png",
-      config_.model_path + "skybox/py.png",
-      config_.model_path + "skybox/ny.png",
-      config_.model_path + "skybox/pz.png",
-      config_.model_path + "skybox/nz.png"
+  const std::vector skybox_paths {
+    config_.model_path + "skybox/px.png",
+    config_.model_path + "skybox/nx.png",
+    config_.model_path + "skybox/py.png",
+    config_.model_path + "skybox/ny.png",
+    config_.model_path + "skybox/pz.png",
+    config_.model_path + "skybox/nz.png"
   };
-  skybox_ = std::make_unique<Skybox>(skybox_paths);
+  skybox_     = std::make_unique<Skybox>(skybox_paths);
   csm_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
-                                                    .vertex("csm.vert")
-                                                    .geometry("csm.geom")
-                                                    .fragment("empty.frag"));
+                                                .vertex("csm.vert")
+                                                .geometry("csm.geom")
+                                                .fragment("empty.frag"));
   temple_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
-                                                       .vertex("blinn_phong.vert")
-                                                       .fragment("blinn_phong.frag"));
+                                                   .vertex("blinn_phong.vert")
+                                                   .fragment("blinn_phong.frag"));
   skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
-                                                       .vertex("sky.vert")
-                                                       .fragment("sky.frag"));
+                                                   .vertex("sky.vert")
+                                                   .fragment("sky.frag"));
   image_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
-                                                      .vertex("image_space.vert")
-                                                      .fragment("image_space.frag"));
+                                                  .vertex("image_space.vert")
+                                                  .fragment("image_space.frag"));
   if (config_.debug_enabled && config_.debug_render_light_positions) {
     debug_light_positions_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
-                                                                        .vertex("debug_lights.vert")
-                                                                        .geometry("debug_lights.geom")
-                                                                        .fragment("debug_lights.frag"));
+                                                                    .vertex("debug_lights.vert")
+                                                                    .geometry("debug_lights.geom")
+                                                                    .fragment("debug_lights.frag"));
   }
 
   initializeMatrixBuffer();
@@ -106,13 +105,17 @@ void Renderer::renderSetup() {
   temple_model_->drawSetup(SSBO_BINDING_TEMPLE_VERTICES, TEX_BINDING_TEMPLE_ARRAY);
   skybox_->drawSetup(SSBO_BINDING_SKY_VERTICES, TEX_BINDING_SKY_CUBE_MAP);
 
-  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                       GL_DEBUG_TYPE_OTHER,
+                       0,
+                       GL_DEBUG_SEVERITY_NOTIFICATION,
+                       -1,
                        "(Renderer::renderSetup): Completed successfully.");
 }
 
 void Renderer::updateRenderState() {
   const auto new_time {static_cast<float>(glfwGetTime())};
-  state_.delta_time = new_time - state_.current_time;
+  state_.delta_time   = new_time - state_.current_time;
   state_.current_time = new_time;
   camera_->updateViewMatrix();
   glNamedBufferSubData(objects_.matrix_buffer.id,
@@ -127,24 +130,13 @@ void Renderer::updateRenderState() {
 
 void Renderer::processKeyboardInput() {
   Initializer::processKeyboardInput();
-  if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) {
-    camera_->processKeyboard(Camera::FORWARD, state_.delta_time);
-  }
-  if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) {
-    camera_->processKeyboard(Camera::BACKWARD, state_.delta_time);
-  }
-  if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) {
-    camera_->processKeyboard(Camera::LEFT, state_.delta_time);
-  }
-  if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) {
-    camera_->processKeyboard(Camera::RIGHT, state_.delta_time);
-  }
-  if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) {
-    camera_->processKeyboard(Camera::UP, state_.delta_time);
-  }
-  if (glfwGetKey(window_, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+  if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) camera_->processKeyboard(Camera::FORWARD, state_.delta_time);
+  if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) camera_->processKeyboard(Camera::BACKWARD, state_.delta_time);
+  if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) camera_->processKeyboard(Camera::LEFT, state_.delta_time);
+  if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) camera_->processKeyboard(Camera::RIGHT, state_.delta_time);
+  if (glfwGetKey(window_, GLFW_KEY_SPACE) == GLFW_PRESS) camera_->processKeyboard(Camera::UP, state_.delta_time);
+  if (glfwGetKey(window_, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
     camera_->processKeyboard(Camera::DOWN, state_.delta_time);
-  }
 }
 
 void Renderer::render() {
@@ -175,7 +167,12 @@ void Renderer::render() {
 }
 
 void Renderer::renderTerminate() {
-  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+  // Placeholder. Thanks to RAII there is nothing that needs to be done here right now
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                       GL_DEBUG_TYPE_OTHER,
+                       0,
+                       GL_DEBUG_SEVERITY_NOTIFICATION,
+                       -1,
                        "(Renderer::renderTerminate): Completed successfully.");
 }
 
@@ -206,7 +203,8 @@ void Renderer::initializeLightDataBuffer() {
   glCreateBuffers(1, &objects_.light_data_buffer.id);
   glNamedBufferStorage(objects_.light_data_buffer.id,
                        static_cast<GLsizeiptr>(sizeof(glm::vec4)
-                                               + static_cast<size_t>(ceil(CSM_NUM_CASCADES / 4.0f)) * sizeof(glm::vec4)
+                                               + static_cast<size_t>(std::ceil(CSM_NUM_CASCADES / 4.0f))
+                                               * sizeof(glm::vec4)
                                                + sizeof(Light)
                                                + sizeof(glm::vec4)
                                                + std::ssize(point_lights) * sizeof(Light)),
@@ -218,19 +216,22 @@ void Renderer::initializeLightDataBuffer() {
                        glm::value_ptr(glm::vec4(camera_->getPosition(), 1.0f)));
   glNamedBufferSubData(objects_.light_data_buffer.id,
                        static_cast<GLintptr>(sizeof(glm::vec4)
-                                             + static_cast<size_t>(ceil(CSM_NUM_CASCADES / 4.0f)) * sizeof(glm::vec4)),
+                                             + static_cast<size_t>(std::ceil(CSM_NUM_CASCADES / 4.0f))
+                                             * sizeof(glm::vec4)),
                        sizeof(Light),
                        &SUNLIGHT);
   const auto num_point_lights {static_cast<GLuint>(std::ssize(point_lights))};
   glNamedBufferSubData(objects_.light_data_buffer.id,
                        static_cast<GLintptr>(sizeof(glm::vec4)
-                                             + static_cast<size_t>(ceil(CSM_NUM_CASCADES / 4.0f)) * sizeof(glm::vec4)
+                                             + static_cast<size_t>(std::ceil(CSM_NUM_CASCADES / 4.0f))
+                                             * sizeof(glm::vec4)
                                              + sizeof(Light)),
                        sizeof(GLuint),
                        &num_point_lights);
   glNamedBufferSubData(objects_.light_data_buffer.id,
                        static_cast<GLintptr>(sizeof(glm::vec4)
-                                             + static_cast<size_t>(ceil(CSM_NUM_CASCADES / 4.0f)) * sizeof(glm::vec4)
+                                             + static_cast<size_t>(std::ceil(CSM_NUM_CASCADES / 4.0f))
+                                             * sizeof(glm::vec4)
                                              + sizeof(Light)
                                              + sizeof(glm::vec4)),
                        static_cast<GLsizeiptr>(std::ssize(point_lights) * sizeof(Light)),
@@ -300,24 +301,22 @@ void Renderer::initializeCSMFramebuffer() {
   glBindTextureUnit(TEX_BINDING_CSM_ARRAY, objects_.csm_fbo_depth.id);
 }
 
-void Renderer::renderSunlightCSM() {
+void Renderer::renderSunlightCSM() const {
   /// Use Practical Split Scheme algorithm to determine view frustum split positions
   std::array<glm::mat4, CSM_NUM_CASCADES> light_matrices {};
-  const float ratio {pow(config_.camera_far_plane / config_.camera_near_plane, 1.0f / CSM_NUM_CASCADES)};
+  const float ratio {std::pow(config_.camera_far_plane / config_.camera_near_plane, 1.0f / CSM_NUM_CASCADES)};
   const float step {(config_.camera_far_plane - config_.camera_near_plane) / CSM_NUM_CASCADES};
   float split_log {config_.camera_near_plane};
   float split_uni {config_.camera_near_plane};
   float split_blend {config_.camera_near_plane};
-  float split_prev;
   for (size_t i = 0; i < CSM_NUM_CASCADES; ++i) {
-    split_prev = split_blend;
-    split_log *= ratio;
-    split_uni += step;
-    split_blend = (split_log + split_uni) / 2.0f;
+    const float split_prev {split_blend};
+    split_log         *= ratio;
+    split_uni         += step;
+    split_blend       = (split_log + split_uni) / 2.0f;
     light_matrices[i] = getSunlightMatrixForCascade(split_prev, split_blend);
     glNamedBufferSubData(objects_.light_data_buffer.id,
-                         static_cast<GLintptr>(sizeof(glm::vec4)
-                                               + i * sizeof(GLfloat)),
+                         static_cast<GLintptr>(sizeof(glm::vec4) + i * sizeof(GLfloat)),
                          sizeof(GLfloat),
                          &split_blend);
   }
@@ -335,7 +334,7 @@ void Renderer::renderSunlightCSM() {
   glViewport(0, 0, config_.window_width, config_.window_height);
 }
 
-void Renderer::framebufferSizeCallback(int width, int height) {
+void Renderer::framebufferSizeCallback(const int width, const int height) {
   Initializer::framebufferSizeCallback(width, height);
   createSceneFramebufferAttachments();
   camera_->updateProjectionMatrix(static_cast<float>(width) / static_cast<float>(height));
@@ -345,7 +344,7 @@ void Renderer::framebufferSizeCallback(int width, int height) {
                        glm::value_ptr(camera_->getProjectionMatrix()));
 }
 
-void Renderer::cursorPosCallback(float x_pos, float y_pos) {
+void Renderer::cursorPosCallback(const float x_pos, const float y_pos) {
   // This prevents a large camera jump on start
   if (state_.first_time_receiving_mouse_input) {
     state_.first_time_receiving_mouse_input = false;
@@ -356,11 +355,11 @@ void Renderer::cursorPosCallback(float x_pos, float y_pos) {
   state_.mouse_y = y_pos;
 }
 
-void Renderer::scrollCallback(float y_offset) {
+void Renderer::scrollCallback(const float y_offset) {
   camera_->processMouseScroll(y_offset, state_.delta_time);
 }
 
-glm::mat4 Renderer::getSunlightMatrixForCascade(float near_plane, float far_plane) const {
+glm::mat4 Renderer::getSunlightMatrixForCascade(const float near_plane, const float far_plane) const {
   /// Compute partition projection matrix
   const glm::mat4 projection {glm::perspective(config_.camera_fov,
                                                static_cast<float>(config_.window_width)
@@ -370,9 +369,7 @@ glm::mat4 Renderer::getSunlightMatrixForCascade(float near_plane, float far_plan
   /// Compute light view matrix
   const std::vector<glm::vec4> corners {getFrustumCorners(projection, camera_->getViewMatrix())};
   glm::vec3 frustum_center {0.0f};
-  for (const glm::vec4& corner : corners) {
-    frustum_center += glm::vec3(corner);
-  }
+  for (const glm::vec4& corner : corners) { frustum_center += glm::vec3(corner); }
   frustum_center /= std::ssize(corners);
   const glm::mat4 light_view {glm::lookAt(frustum_center + glm::vec3(SUNLIGHT.source),
                                           frustum_center,
@@ -400,8 +397,8 @@ std::vector<glm::vec4> Renderer::getFrustumCorners(const glm::mat4& projection, 
   const glm::mat4 inverse {glm::inverse(projection * view)};
   for (unsigned char b = 0x00; b < 0x08; ++b) {
     const glm::vec4 ndc_corner {static_cast<float>(b & 0x01) * 2.0f - 1.0f,
-                                static_cast<float>((b >> 1) & 0x01) * 2.0f - 1.0f,
-                                static_cast<float>((b >> 2) & 0x01) * 2.0f - 1.0f,
+                                static_cast<float>(b >> 1 & 0x01) * 2.0f - 1.0f,
+                                static_cast<float>(b >> 2 & 0x01) * 2.0f - 1.0f,
                                 1.0f};
     const glm::vec4 world_space_corner {inverse * ndc_corner};
     corners.push_back(world_space_corner / world_space_corner.w);
@@ -410,45 +407,75 @@ std::vector<glm::vec4> Renderer::getFrustumCorners(const glm::mat4& projection, 
 }
 
 void Renderer::checkFramebufferErrors(const wrap::Framebuffer& framebuffer) {
-  const GLenum status {glCheckNamedFramebufferStatus(framebuffer.id, GL_FRAMEBUFFER)};
-  switch (status) {
+  switch (const GLenum status {glCheckNamedFramebufferStatus(framebuffer.id, GL_FRAMEBUFFER)}) {
     case GL_FRAMEBUFFER_COMPLETE:
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, framebuffer.id,
-                           GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_OTHER,
+                           framebuffer.id,
+                           GL_DEBUG_SEVERITY_NOTIFICATION,
+                           -1,
                            "(Renderer::checkFramebufferErrors): Framebuffer is complete.");
       break;
     case GL_FRAMEBUFFER_UNDEFINED:
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_ERROR,
+                           framebuffer.id,
+                           GL_DEBUG_SEVERITY_HIGH,
+                           -1,
                            "(Renderer::checkFramebufferErrors): Framebuffer undefined.");
       break;
     case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_ERROR,
+                           framebuffer.id,
+                           GL_DEBUG_SEVERITY_HIGH,
+                           -1,
                            "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Incomplete Attachment. "
                            "All attachments must be attachment complete (empty attachments are complete by default).");
       break;
     case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_ERROR,
+                           framebuffer.id,
+                           GL_DEBUG_SEVERITY_HIGH,
+                           -1,
                            "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Missing Attachment. "
                            "At least one image must be attached.");
       break;
     case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_ERROR,
+                           framebuffer.id,
+                           GL_DEBUG_SEVERITY_HIGH,
+                           -1,
                            "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Multisample mismatch. "
                            "All attached images must have the same number of multisample samples, and use the same "
                            "fixed sample layout setting.");
       break;
     case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_ERROR,
+                           framebuffer.id,
+                           GL_DEBUG_SEVERITY_HIGH,
+                           -1,
                            "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Layered mismatch. "
                            "Either all or none of the attached images must be layered attachments.");
       break;
     case GL_FRAMEBUFFER_UNSUPPORTED:
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_ERROR,
+                           framebuffer.id,
+                           GL_DEBUG_SEVERITY_HIGH,
+                           -1,
                            "(Renderer::checkFramebufferErrors): Framebuffer Incomplete -> Unsupported combination of "
                            "attached image formats.");
       break;
     default:
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, framebuffer.id, GL_DEBUG_SEVERITY_HIGH, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_ERROR,
+                           framebuffer.id,
+                           GL_DEBUG_SEVERITY_HIGH,
+                           -1,
                            std::format("(Renderer::checkFramebufferErrors): Unrecognized glCheckFramebufferStatus() "
                                        "return value {}", status).c_str());
       break;

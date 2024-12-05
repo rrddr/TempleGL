@@ -5,26 +5,24 @@
 #include "shader_program.h"
 
 #include <assimp/scene.h>
-#include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 #include <glm/glm.hpp>
 
 #include <vector>
 #include <string>
-#include <array>
 #include <memory>
 
 /**
  * Implements everything needed to draw a model, using Multi-Draw Indirect and a uniform array for textures.
  */
 class Model {
- public:
+public:
   std::vector<glm::vec4> light_positions_;
 
   /**
    * Parses a Wavefront .obj file, and loads the data into OpenGL buffers.
    * <p>
-   * No .mtl file is needed. Instead the material name will be used to look for textures at:
+   * No .mtl file is needed. Instead, the material name will be used to look for textures at:
    * <folder_path>/diffuse/<mtl-name>.png,
    * <folder_path>/normal/<mtl-name>.png, and
    * <folder_path>/specular/<mtl-name>.png.
@@ -55,12 +53,12 @@ class Model {
    *                The diffuse texture for a given material is layer gl_BaseInstance*3 of the texture array
    *                (normal is *3+1, specular is *3+2).
    */
-  inline void draw(const std::unique_ptr<ShaderProgram>& shader) const {
+  void draw(const std::unique_ptr<ShaderProgram>& shader) const {
     shader->use();
     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, num_draw_commands_, 0);
   }
 
- private:
+private:
   struct Vertex {
     GLfloat position[3];
     GLfloat tangent[3];
@@ -72,7 +70,7 @@ class Model {
     GLuint instance_count;
     GLuint first_vertex;
     GLint base_vertex;
-    GLuint base_instance;   // We don't use instancing, so this is re-purposed as material index of the mesh
+    GLuint base_instance; // We don't use instancing, so this is re-purposed as material index of the mesh
   };
 
   Assimp::Importer importer_ {};
@@ -88,9 +86,9 @@ class Model {
   void loadLightData();
   void createTextureArray(aiMaterial** materials, unsigned int num_materials);
   void createBuffers(aiMesh** meshes, unsigned int num_meshes);
-  template<typename T>
+  template <typename T>
   static void createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector);
-  void checkAssimpSceneErrors(const aiScene* scene, const std::string& path);
+  void checkAssimpSceneErrors(const aiScene* scene, const std::string& path) const;
 
   static constexpr GLsizei TEX_SIZE {128};
 };

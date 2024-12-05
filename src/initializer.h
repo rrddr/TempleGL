@@ -23,21 +23,22 @@ struct MinimalInitializerConfig {
  *
  * @tparam CONFIG_TYPE  Should derive from MinimalInitializerConfig.
  */
-template<typename CONFIG_TYPE>
+template <typename CONFIG_TYPE>
 class Initializer {
- public:
+public:
+  virtual ~Initializer() = default;
   virtual void run() final;
 
- protected:
+protected:
   CONFIG_TYPE config_ {};
-  GLFWwindow* window_ {};             // raw pointer, as destruction is handled by glfwTerminate()
+  GLFWwindow* window_ {}; // raw pointer, as destruction is handled by glfwTerminate()
 
   /// Program stages
-  virtual void loadConfigYaml();        // should initialize all fields in CONFIG_TYPE
+  virtual void loadConfigYaml(); // should initialize all fields in CONFIG_TYPE
   virtual void init() final;
   virtual void renderSetup() {}
   virtual void updateRenderState() {}
-  virtual void processKeyboardInput();  // default implementation terminates program on ESC press
+  virtual void processKeyboardInput(); // default implementation terminates program on ESC press
   virtual void render() {}
   virtual void renderTerminate() {}
 
@@ -46,7 +47,12 @@ class Initializer {
   virtual void cursorPosCallback(float x_pos, float y_pos) {}
   virtual void scrollCallback(float y_offset) {}
   static void glfwErrorCallback(int error_code, const char* description);
-  static void APIENTRY debugMessageCallback(GLenum source, GLenum type, unsigned int id, GLenum severity,
-                                            GLsizei length, const char* message, const void* user_param);
+  static void APIENTRY debugMessageCallback(GLenum source,
+                                            GLenum type,
+                                            unsigned int id,
+                                            GLenum severity,
+                                            GLsizei length,
+                                            const char* message,
+                                            const void* user_param);
 };
 #endif //TEMPLEGL_SRC_INITIALIZER_H_

@@ -31,7 +31,7 @@ struct RendererConfig : MinimalInitializerConfig {
 /**
  * Implements the non-boilerplate methods declared by the abstract Initializer class.
  */
-class Renderer : public Initializer<RendererConfig> {
+class Renderer final : public Initializer<RendererConfig> {
   struct State {
     bool first_time_receiving_mouse_input;
     float mouse_x;
@@ -76,7 +76,7 @@ class Renderer : public Initializer<RendererConfig> {
   void initializeLightDataBuffer();
   void createSceneFramebufferAttachments(); // may be called multiple times
   void initializeCSMFramebuffer();
-  void renderSunlightCSM();
+  void renderSunlightCSM() const;
 
   /// Callbacks
   void framebufferSizeCallback(int width, int height) override;
@@ -93,7 +93,7 @@ class Renderer : public Initializer<RendererConfig> {
     glm::vec4 source;
     glm::vec4 color;
     float intensity;
-    float padding[3];   // padding to conform with std430 storage layout rules
+    float padding[3]; // padding to conform with std430 storage layout rules
   };
   static constexpr Light SUNLIGHT {{-0.4f, 0.9f, -1.0f, 0.0f},
                                    {1.0f, 0.7f, 0.4f, 1.0f},

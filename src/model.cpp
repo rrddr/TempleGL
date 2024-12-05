@@ -2,17 +2,19 @@
 #include "stbi_helpers.h"
 
 #include <glad/glad.h>
+#include <assimp/postprocess.h>
 
 #include <format>
 #include <filesystem>
 #include <cstring>
 
-Model::Model(std::string folder_path) : source_dir_ {std::move(folder_path)} {
+Model::Model(std::string folder_path)
+  : source_dir_ {std::move(folder_path)} {
   loadModelData();
   loadLightData();
 }
 
-void Model::drawSetup(GLuint vertex_buffer_binding, GLuint texture_binding) const {
+void Model::drawSetup(const GLuint vertex_buffer_binding, const GLuint texture_binding) const {
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, vertex_buffer_binding, vertex_buffer_.id);
   glBindTextureUnit(texture_binding, texture_array_.id);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_.id);
@@ -22,14 +24,18 @@ void Model::drawSetup(GLuint vertex_buffer_binding, GLuint texture_binding) cons
 void Model::loadModelData() {
   const std::string path {source_dir_ + "model.obj"};
   const aiScene* scene {importer_.ReadFile(path.c_str(),
-                                          aiProcess_FlipUVs |
-                                          aiProcess_Triangulate |
-                                          aiProcess_GenNormals |
-                                          aiProcess_CalcTangentSpace)};
+                                           aiProcess_FlipUVs |
+                                           aiProcess_Triangulate |
+                                           aiProcess_GenNormals |
+                                           aiProcess_CalcTangentSpace)};
   checkAssimpSceneErrors(scene, path);
   createTextureArray(scene->mMaterials, scene->mNumMaterials);
   createBuffers(scene->mMeshes, scene->mNumMeshes);
-  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                       GL_DEBUG_TYPE_OTHER,
+                       0,
+                       GL_DEBUG_SEVERITY_NOTIFICATION,
+                       -1,
                        "(Model::loadModelData): Completed successfully.");
 }
 
@@ -43,7 +49,7 @@ void Model::loadLightData() {
     if (std::strcmp(scene->mMaterials[mesh->mMaterialIndex]->GetName().C_Str(), "light_source") != 0) continue;
     for (unsigned int j = 0; j < mesh->mNumFaces; ++j) {
       const aiFace& face {mesh->mFaces[j]};
-      aiVector3t<ai_real> average {0.0f};
+      aiVector3t average {0.0f};
       for (unsigned int k = 0; k < face.mNumIndices; ++k) {
         average += mesh->mVertices[face.mIndices[k]];
       }
@@ -51,7 +57,11 @@ void Model::loadLightData() {
       light_positions_.emplace_back(average.x, average.y, average.z, 1.0f);
     }
   }
-  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                       GL_DEBUG_TYPE_OTHER,
+                       0,
+                       GL_DEBUG_SEVERITY_NOTIFICATION,
+                       -1,
                        "(Model::loadLightData): Completed successfully.");
 }
 
@@ -64,9 +74,14 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
     for (auto folder : {"diffuse/", "normal/", "specular/"}) {
       std::string path {source_dir_ + folder + material_name + ".png"};
       if (!std::filesystem::exists(path)) {
-        glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+        glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                             GL_DEBUG_TYPE_OTHER,
+                             0,
+                             GL_DEBUG_SEVERITY_NOTIFICATION,
+                             -1,
                              std::format("(Model::createTextureArray): Using default {} texture for material '{}.'",
-                                         folder, material_name).c_str());
+                                         folder,
+                                         material_name).c_str());
         path = source_dir_ + folder + "DefaultMaterial.png";
       }
       help::fill3DTextureLayer(path, texture_array_, layer, TEX_SIZE, TEX_SIZE);
@@ -75,7 +90,11 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
   }
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                       GL_DEBUG_TYPE_OTHER,
+                       0,
+                       GL_DEBUG_SEVERITY_NOTIFICATION,
+                       -1,
                        "(Model::createTextureArray): Completed successfully.");
 }
 
@@ -90,7 +109,11 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
   for (unsigned int i = 0; i < num_meshes; ++i) {
     const aiMesh* mesh {meshes[i]};
     if (mesh->mPrimitiveTypes != (aiPrimitiveType_TRIANGLE | aiPrimitiveType_NGONEncodingFlag)) {
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_MEDIUM, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_ERROR,
+                           0,
+                           GL_DEBUG_SEVERITY_MEDIUM,
+                           -1,
                            "(Model::createBuffers): Detected point/line primitives in mesh, which are not allowed. "
                            "This mesh will be skipped.");
       continue;
@@ -98,16 +121,16 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
     draw_commands.emplace_back(mesh->mNumFaces * 3, 1, first_index, base_vertex, mesh->mMaterialIndex);
     for (unsigned int j = 0; j < mesh->mNumVertices; ++j) {
       vertices.emplace_back(Vertex {{mesh->mVertices[j].x,
-                                        mesh->mVertices[j].y,
-                                        mesh->mVertices[j].z},
+                                     mesh->mVertices[j].y,
+                                     mesh->mVertices[j].z},
                                     {mesh->mTangents[j].x,
-                                        mesh->mTangents[j].y,
-                                        mesh->mTangents[j].z},
+                                     mesh->mTangents[j].y,
+                                     mesh->mTangents[j].z},
                                     {mesh->mBitangents[j].x,
-                                        mesh->mBitangents[j].y,
-                                        mesh->mBitangents[j].z},
-                                    {(mesh->mTextureCoords[0]) ? mesh->mTextureCoords[0][j].x : 0.0f,
-                                        (mesh->mTextureCoords[0]) ? mesh->mTextureCoords[0][j].y : 0.0f}});
+                                     mesh->mBitangents[j].y,
+                                     mesh->mBitangents[j].z},
+                                    {mesh->mTextureCoords[0] ? mesh->mTextureCoords[0][j].x : 0.0f,
+                                     mesh->mTextureCoords[0] ? mesh->mTextureCoords[0][j].y : 0.0f}});
       ++base_vertex;
     }
     for (unsigned int j = 0; j < mesh->mNumFaces; ++j) {
@@ -122,22 +145,30 @@ void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
   createBufferFromVector<Vertex>(vertex_buffer_, vertices);
   createBufferFromVector<GLuint>(index_buffer_, indices);
   createBufferFromVector<DrawElementsIndirectCommand>(draw_command_buffer_, draw_commands);
-  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, -1,
+  glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                       GL_DEBUG_TYPE_OTHER,
+                       0,
+                       GL_DEBUG_SEVERITY_NOTIFICATION,
+                       -1,
                        "(Model::createBuffers): Completed successfully.");
 }
 
-template<typename T>
+template <typename T>
 void Model::createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector) {
   glCreateBuffers(1, &buffer.id);
   glNamedBufferStorage(buffer.id, sizeof(T) * std::ssize(vector), vector.data(), GL_DYNAMIC_STORAGE_BIT);
 }
 
-void Model::checkAssimpSceneErrors(const aiScene* scene, const std::string& path) {
+void Model::checkAssimpSceneErrors(const aiScene* scene, const std::string& path) const {
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1,
+    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                         GL_DEBUG_TYPE_ERROR,
+                         0,
+                         GL_DEBUG_SEVERITY_HIGH,
+                         -1,
                          std::format("(Model::checkAssimpSceneErrors): Failed to read file from path '{}'. "
                                      "Reason: '{}'",
-                                     path, importer_.GetErrorString()).c_str());
-    return;
+                                     path,
+                                     importer_.GetErrorString()).c_str());
   }
 }

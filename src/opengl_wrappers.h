@@ -15,7 +15,11 @@ namespace wrap {
   struct Texture {
     GLuint id;
     ~Texture() {
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, id, GL_DEBUG_SEVERITY_MEDIUM, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_OTHER,
+                           id,
+                           GL_DEBUG_SEVERITY_MEDIUM,
+                           -1,
                            "Deleting Texture");
       glDeleteTextures(1, &id);
     }
@@ -23,7 +27,11 @@ namespace wrap {
   struct Buffer {
     GLuint id;
     ~Buffer() {
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, id, GL_DEBUG_SEVERITY_MEDIUM, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_OTHER,
+                           id,
+                           GL_DEBUG_SEVERITY_MEDIUM,
+                           -1,
                            "Deleting Buffer");
       glDeleteBuffers(1, &id);
     }
@@ -31,7 +39,11 @@ namespace wrap {
   struct VertexArray {
     GLuint id;
     ~VertexArray() {
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, id, GL_DEBUG_SEVERITY_MEDIUM, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_OTHER,
+                           id,
+                           GL_DEBUG_SEVERITY_MEDIUM,
+                           -1,
                            "Deleting Vertex Array");
       glDeleteVertexArrays(1, &id);
     }
@@ -39,7 +51,11 @@ namespace wrap {
   struct Framebuffer {
     GLuint id;
     ~Framebuffer() {
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, id, GL_DEBUG_SEVERITY_MEDIUM, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_OTHER,
+                           id,
+                           GL_DEBUG_SEVERITY_MEDIUM,
+                           -1,
                            "Deleting Framebuffer");
       glDeleteFramebuffers(1, &id);
     }
@@ -47,7 +63,11 @@ namespace wrap {
   struct Renderbuffer {
     GLuint id;
     ~Renderbuffer() {
-      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, id, GL_DEBUG_SEVERITY_MEDIUM, -1,
+      glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
+                           GL_DEBUG_TYPE_OTHER,
+                           id,
+                           GL_DEBUG_SEVERITY_MEDIUM,
+                           -1,
                            "Deleting Renderbuffer");
       glDeleteRenderbuffers(1, &id);
     }
