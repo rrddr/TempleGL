@@ -23,11 +23,11 @@ public:
   [[nodiscard]] glm::mat4 getViewMatrix() const { return state_.view_matrix; }
   [[nodiscard]] glm::mat4 getProjectionMatrix() const { return state_.projection_matrix; }
   [[nodiscard]] glm::vec3 getPosition() const { return state_.position; }
+  void updateAspectRatio(const float aspect_ratio) { config_.aspect_ratio = aspect_ratio; }
   void updateViewMatrix() {
     state_.view_matrix = glm::lookAt(state_.position, state_.position + state_.front, state_.up);
   }
-  void updateProjectionMatrix(const float aspect_ratio) {
-    config_.aspect_ratio     = aspect_ratio;
+  void updateProjectionMatrix() {
     state_.projection_matrix = glm::perspective(config_.fov,
                                                 config_.aspect_ratio,
                                                 config_.near_plane,

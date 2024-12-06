@@ -337,7 +337,8 @@ void Renderer::renderSunlightCSM() const {
 void Renderer::framebufferSizeCallback(const int width, const int height) {
   Initializer::framebufferSizeCallback(width, height);
   createSceneFramebufferAttachments();
-  camera_->updateProjectionMatrix(static_cast<float>(width) / static_cast<float>(height));
+  camera_->updateAspectRatio(static_cast<float>(width) / static_cast<float>(height));
+  camera_->updateProjectionMatrix();
   glNamedBufferSubData(objects_.matrix_buffer.id,
                        0,
                        sizeof(glm::mat4),

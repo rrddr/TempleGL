@@ -65,7 +65,7 @@ void Model::loadLightData() {
                        "(Model::loadLightData): Completed successfully.");
 }
 
-void Model::createTextureArray(aiMaterial** materials, unsigned int num_materials) {
+void Model::createTextureArray(aiMaterial** materials, const unsigned int num_materials) {
   glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &texture_array_.id);
   glTextureStorage3D(texture_array_.id, 1, GL_RGB8, TEX_SIZE, TEX_SIZE, static_cast<GLsizei>(num_materials) * 3);
   GLint layer {0};
@@ -76,7 +76,7 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
       if (!std::filesystem::exists(path)) {
         glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
                              GL_DEBUG_TYPE_OTHER,
-                             0,
+                             texture_array_.id,
                              GL_DEBUG_SEVERITY_NOTIFICATION,
                              -1,
                              std::format("(Model::createTextureArray): Using default {} texture for material '{}.'",
@@ -92,13 +92,13 @@ void Model::createTextureArray(aiMaterial** materials, unsigned int num_material
   glTextureParameteri(texture_array_.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
                        GL_DEBUG_TYPE_OTHER,
-                       0,
+                       texture_array_.id,
                        GL_DEBUG_SEVERITY_NOTIFICATION,
                        -1,
                        "(Model::createTextureArray): Completed successfully.");
 }
 
-void Model::createBuffers(aiMesh** meshes, unsigned int num_meshes) {
+void Model::createBuffers(aiMesh** meshes, const unsigned int num_meshes) {
   std::vector<Vertex> vertices;
   std::vector<GLuint> indices;
   std::vector<DrawElementsIndirectCommand> draw_commands;
