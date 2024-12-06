@@ -14,7 +14,7 @@ void Renderer::loadConfigYaml() {
   YAML::Node config_yaml;
   try {
     config_yaml = YAML::LoadFile("../config.yaml");
-  } catch (YAML::Exception& e) {
+  } catch (YAML::Exception&) {
     std::cerr << "ERROR (Renderer::loadConfigYaml): Failed to load config.yaml." << std::endl;
     throw; // re-throw to main
   }
@@ -39,7 +39,7 @@ void Renderer::loadConfigYaml() {
     config_.model_source_path            = config_yaml["model"]["source_path"].as<std::string>();
     config_.shader_source_path           = config_yaml["shader"]["source_path"].as<std::string>();
     config_.debug_render_light_positions = config_yaml["debug"]["render_light_positions"].as<bool>();
-  } catch (YAML::Exception& e) {
+  } catch (YAML::Exception&) {
     std::cerr << "ERROR (Renderer::loadConfigYaml): Failed to parse config.yaml." << std::endl;
     throw; // re-throw to main
   }

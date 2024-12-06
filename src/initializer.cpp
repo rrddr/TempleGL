@@ -26,7 +26,7 @@ void Initializer<T>::loadConfigYaml() {
   YAML::Node config_yaml;
   try {
     config_yaml = YAML::LoadFile("../config.yaml");
-  } catch (YAML::Exception& e) {
+  } catch (YAML::Exception&) {
     std::cerr << "ERROR (Initializer::loadConfigYaml): Failed to load config.yaml." << std::endl;
     throw; // re-throw to main
   }
@@ -52,7 +52,7 @@ void Initializer<T>::loadConfigYaml() {
                 << "debug.level must be one of 'all', 'low', 'medium', 'high'. Defaulting to 'all'." << std::endl;
       config_.debug_level = ALL;
     }
-  } catch (YAML::Exception& e) {
+  } catch (YAML::Exception&) {
     std::cerr << "ERROR (Initializer::loadConfigYaml): Failed to parse config.yaml." << std::endl;
     throw; // re-throw to main
   }

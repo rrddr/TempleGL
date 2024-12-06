@@ -61,8 +61,10 @@ std::string ShaderProgram::Stages::loadShaderSource(const std::string& filename)
                          0,
                          GL_DEBUG_SEVERITY_HIGH,
                          -1,
-                         std::format("(ShaderProgram::Stages::loadShaderSource): Failed to read file from path '{}'",
-                                     source_dir_ + filename).c_str());
+                         std::format("(ShaderProgram::Stages::loadShaderSource): Failed to read file from path '{}'. "
+                                     "Reason: '{}'",
+                                     source_dir_ + filename,
+                                     e.what()).c_str());
     return "";
   }
 }
