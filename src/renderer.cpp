@@ -399,9 +399,9 @@ std::vector<glm::vec4> Renderer::getFrustumCorners(const glm::mat4& projection, 
   std::vector<glm::vec4> corners;
   const glm::mat4 inverse {glm::inverse(projection * view)};
   for (unsigned char b = 0x00; b < 0x08; ++b) {
-    const glm::vec4 ndc_corner {static_cast<float>(b & 0x01) * 2.0f - 1.0f,
-                                static_cast<float>(b >> 1 & 0x01) * 2.0f - 1.0f,
-                                static_cast<float>(b >> 2 & 0x01) * 2.0f - 1.0f,
+    const glm::vec4 ndc_corner {b & 0x01 ? 1.0f : -1.0f,
+                                b & 0x02 ? 1.0f : -1.0f,
+                                b & 0x04 ? 1.0f : -1.0f,
                                 1.0f};
     const glm::vec4 world_space_corner {inverse * ndc_corner};
     corners.push_back(world_space_corner / world_space_corner.w);

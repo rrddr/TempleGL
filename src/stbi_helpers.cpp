@@ -17,12 +17,12 @@ void help::fill3DTextureLayer(const std::string& path,
                               const GLsizei width,
                               const GLsizei height) {
   int actual_width, actual_height, actual_num_components;
-  const auto data = std::unique_ptr<unsigned char, StbiDeleter>(stbi_load(path.c_str(),
-                                                                          &actual_width,
-                                                                          &actual_height,
-                                                                          &actual_num_components,
-                                                                          STBI_rgb),
-                                                                StbiDeleter());
+  const auto data {std::unique_ptr<unsigned char, StbiDeleter>(stbi_load(path.c_str(),
+                                                                         &actual_width,
+                                                                         &actual_height,
+                                                                         &actual_num_components,
+                                                                         STBI_rgb),
+                                                               StbiDeleter())};
   if (!data) {
     glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
                          GL_DEBUG_TYPE_ERROR,
