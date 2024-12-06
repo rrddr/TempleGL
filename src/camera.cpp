@@ -15,7 +15,7 @@ Camera::Camera(glm::vec3 position,
     state_ {position, {}, {}, {}, yaw, pitch, speed, {}, {}} {
   updateCameraVectors();
   updateViewMatrix();
-  updateProjectionMatrix(aspect_ratio);
+  updateProjectionMatrix();
 }
 
 void Camera::processKeyboard(const MoveDirection direction, const float delta_time) {

@@ -23,8 +23,8 @@ struct RendererConfig : MinimalInitializerConfig {
   float camera_fov;
   float camera_near_plane;
   float camera_far_plane;
-  std::string model_path;
-  std::string shader_path;
+  std::string model_source_path;
+  std::string shader_source_path;
   bool debug_render_light_positions;
 };
 
@@ -85,7 +85,7 @@ class Renderer final : public Initializer<RendererConfig> {
 
   /// Helper methods
   [[nodiscard]] glm::mat4 getSunlightMatrixForCascade(float near_plane, float far_plane) const;
-  static std::vector<glm::vec4> getFrustumCorners(const glm::mat4& projection, const glm::mat4& view);
+  [[nodiscard]] static std::vector<glm::vec4> getFrustumCorners(const glm::mat4& projection, const glm::mat4& view);
   static void checkFramebufferErrors(const wrap::Framebuffer& framebuffer);
 
   /// Hardcoded shader parameters
@@ -108,16 +108,19 @@ class Renderer final : public Initializer<RendererConfig> {
   static constexpr size_t SCENE_FBO_COLOR_INDEX_TEMPLE {0};
   static constexpr size_t SCENE_FBO_COLOR_INDEX_SKY {1};
 
-  static constexpr GLuint TEX_BINDING_TEMPLE_ARRAY {0};
-  static constexpr GLuint TEX_BINDING_SKY_CUBE_MAP {1};
-  static constexpr GLuint TEX_BINDING_SCENE_TEMPLE {2};
-  static constexpr GLuint TEX_BINDING_SCENE_SKY {3};
-  static constexpr GLuint TEX_BINDING_CSM_ARRAY {4};
-
-  static constexpr GLuint SSBO_BINDING_TEMPLE_VERTICES {0};
-  static constexpr GLuint SSBO_BINDING_SKY_VERTICES {1};
-  static constexpr GLuint SSBO_BINDING_LIGHT_DATA {2};
-
-  static constexpr GLuint UBO_BINDING_MATRIX {0};
+  enum TextureBinding { TEMPLE_ARRAY, SUN_CSM_ARRAY, SKY_CUBE_MAP, SCENE_TEMPLE, SCENE_SKY };
+  enum SSBOBinding { TEMPLE_VERTEX, SKY_VERTEX, LIGHT_DATA };
+  enum UBOBinding { MATRIX };
+  inline static const std::vector<std::pair<std::string, int>> SHADER_CONSTANTS {{
+    std::make_pair("SAMPLER_ARRAY_TEMPLE", TEMPLE_ARRAY),
+    std::make_pair("SAMPLER_ARRAY_SHADOW_SUN", SUN_CSM_ARRAY),
+    std::make_pair("SAMPLER_CUBE_SKY", SKY_CUBE_MAP),
+    std::make_pair("SAMPLER_SCENE_MODEL", SCENE_TEMPLE),
+    std::make_pair("SAMPLER_SCENE_SKY", SCENE_SKY),
+    std::make_pair("SSBO_TEMPLE_VERTEX", TEMPLE_VERTEX),
+    std::make_pair("SSBO_SKY_VERTEX", SKY_VERTEX),
+    std::make_pair("SSBO_LIGHT_DATA", LIGHT_DATA),
+    std::make_pair("UBO_MATRIX", MATRIX),
+  }};
 };
 #endif //TEMPLEGL_SRC_RENDERER_H_

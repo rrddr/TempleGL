@@ -11,8 +11,8 @@ in VS_OUT {
     flat mat3 TBN;
 } fs_in;
 
-layout (binding = 0) uniform sampler2DArray model_texture_array;
-layout (binding = 4) uniform sampler2DArrayShadow sunlight_csm_array;
+layout (binding = SAMPLER_ARRAY_TEMPLE) uniform sampler2DArray model_texture_array;
+layout (binding = SAMPLER_ARRAY_SHADOW_SUN) uniform sampler2DArrayShadow sunlight_csm_array;
 
 const float SPECULAR_EXPONENT = 16.0;
 const float POINT_LIGHT_MAX_R = 7.0;

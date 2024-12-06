@@ -1,6 +1,6 @@
 //INCLUDE_TARGET
 // This should match the hardcoded data in src/skybox.h
-layout (binding = 1, std430) readonly buffer sky_vertex_ssbo {
+layout (binding = SSBO_SKY_VERTEX, std430) readonly buffer sky_vertex_ssbo {
     float data[108];
 };
 

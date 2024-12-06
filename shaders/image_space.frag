@@ -4,8 +4,8 @@ in VS_OUT {
     vec2 uv;
 } fs_in;
 
-layout(binding = 2) uniform sampler2D scene_model;
-layout(binding = 3) uniform sampler2D scene_sky;
+layout(binding = SAMPLER_SCENE_MODEL) uniform sampler2D scene_model;
+layout(binding = SAMPLER_SCENE_SKY) uniform sampler2D scene_sky;
 
 const float EXPOSURE = 0.7;
 

@@ -4,6 +4,14 @@
 #include <format>
 #include <array>
 
+ShaderProgram::Stages::Stages(std::string source_directory,
+                              const std::vector<std::pair<std::string, int>>& shader_constants)
+  : source_dir_(std::move(source_directory)) {
+  for (const auto& [name, value] : shader_constants) {
+    shader_constants_.append(std::format("#define {} {}\n", name, value));
+  }
+}
+
 ShaderProgram::Stages& ShaderProgram::Stages::vertex(const std::string& filename) {
   vertex_shader_source_ = loadShaderSource(filename);
   return *this;
@@ -36,7 +44,12 @@ std::string ShaderProgram::Stages::loadShaderSource(const std::string& filename)
     std::string shader_source;
     shader_file.open(source_dir_ + filename);
     for (std::string line; std::getline(shader_file, line);) {
-      if (line.compare(0, 8, "#include") == 0) { shader_source.append(handleInclude(line)); } else {
+      if (line.compare(0, 8, "#version") == 0) {
+        shader_source.append(line + "\n");
+        shader_source.append(shader_constants_);
+      } else if (line.compare(0, 8, "#include") == 0) {
+        shader_source.append(handleInclude(line));
+      } else {
         shader_source.append(line + "\n");
       }
     }
@@ -62,7 +75,7 @@ std::string ShaderProgram::Stages::handleInclude(const std::string& include_line
   return include_cache_[filename];
 }
 
-ShaderProgram::ShaderProgram(const ShaderProgram::Stages& stages) {
+ShaderProgram::ShaderProgram(const Stages& stages) {
   program_id_ = glCreateProgram();
   const std::array shader_ids {
     compileShader(stages.vertex_shader_source_, GL_VERTEX_SHADER),
@@ -87,7 +100,7 @@ ShaderProgram::ShaderProgram(const ShaderProgram::Stages& stages) {
   }
 }
 
-GLuint ShaderProgram::compileShader(const std::string& shader_string, GLenum shader_type) {
+GLuint ShaderProgram::compileShader(const std::string& shader_string, const GLenum shader_type) {
   GLuint shader_id {0};
   if (!shader_string.empty()) {
     shader_id = glCreateShader(shader_type);
@@ -99,7 +112,7 @@ GLuint ShaderProgram::compileShader(const std::string& shader_string, GLenum sha
   return shader_id;
 }
 
-void ShaderProgram::checkCompileOrLinkErrors(GLuint program_or_shader, GLenum program_or_shader_type) {
+void ShaderProgram::checkCompileOrLinkErrors(const GLuint program_or_shader, const GLenum program_or_shader_type) {
   GLint success;
   std::array<GLchar, MAX_ERROR_LENGTH> info_log {};
   if (program_or_shader_type == GL_SHADER) {

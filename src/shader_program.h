@@ -2,8 +2,10 @@
 #define TEMPLEGL_SRC_SHADER_PROGRAM_H_
 
 #include <glad/glad.h>
+
 #include <string>
-#include <map>
+#include <unordered_map>
+#include <vector>
 
 /**
  * Used to create and interact with an OpenGL shader program.
@@ -15,7 +17,8 @@ public:
   */
  class Stages {
  public:
-  explicit Stages(std::string source_directory) : source_dir_(std::move(source_directory)) {}
+  explicit Stages(std::string source_directory,
+                  const std::vector<std::pair<std::string, int>>& shader_constants);
 
   std::string vertex_shader_source_;
   std::string tessellation_control_shader_source_;
@@ -34,7 +37,8 @@ public:
 
  private:
   std::string source_dir_;
-  inline static std::map<std::string, std::string> include_cache_ {};
+  std::string shader_constants_;
+  inline static std::unordered_map<std::string, std::string> include_cache_ {};
 
   std::string loadShaderSource(const std::string& filename);
   std::string handleInclude(const std::string& include_line);

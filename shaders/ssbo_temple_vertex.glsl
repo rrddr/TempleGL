@@ -6,7 +6,7 @@ struct Vertex {
     float bitangent[3];
     float uv[2];
 };
-layout (binding = 0, std430) readonly buffer temple_vertex_ssbo {
+layout (binding = SSBO_TEMPLE_VERTEX, std430) readonly buffer temple_vertex_ssbo {
     Vertex data[];
 };
 

@@ -36,8 +36,8 @@ void Renderer::loadConfigYaml() {
     config_.camera_fov                   = glm::radians(config_yaml["camera"]["view_frustum"]["fov"].as<float>());
     config_.camera_near_plane            = config_yaml["camera"]["view_frustum"]["near_plane"].as<float>();
     config_.camera_far_plane             = config_yaml["camera"]["view_frustum"]["far_plane"].as<float>();
-    config_.model_path                   = config_yaml["model"]["source_path"].as<std::string>();
-    config_.shader_path                  = config_yaml["shader"]["source_path"].as<std::string>();
+    config_.model_source_path            = config_yaml["model"]["source_path"].as<std::string>();
+    config_.shader_source_path           = config_yaml["shader"]["source_path"].as<std::string>();
     config_.debug_render_light_positions = config_yaml["debug"]["render_light_positions"].as<bool>();
   } catch (YAML::Exception& e) {
     std::cerr << "ERROR (Renderer::loadConfigYaml): Failed to parse config.yaml." << std::endl;
@@ -66,31 +66,33 @@ void Renderer::renderSetup() {
                                      aspect_ratio,
                                      config_.camera_near_plane,
                                      config_.camera_far_plane);
-  temple_model_ = std::make_unique<Model>(config_.model_path + "temple/");
+  temple_model_ = std::make_unique<Model>(config_.model_source_path + "temple/");
   const std::vector skybox_paths {
-    config_.model_path + "skybox/px.png",
-    config_.model_path + "skybox/nx.png",
-    config_.model_path + "skybox/py.png",
-    config_.model_path + "skybox/ny.png",
-    config_.model_path + "skybox/pz.png",
-    config_.model_path + "skybox/nz.png"
+    config_.model_source_path + "skybox/px.png",
+    config_.model_source_path + "skybox/nx.png",
+    config_.model_source_path + "skybox/py.png",
+    config_.model_source_path + "skybox/ny.png",
+    config_.model_source_path + "skybox/pz.png",
+    config_.model_source_path + "skybox/nz.png"
   };
   skybox_     = std::make_unique<Skybox>(skybox_paths);
-  csm_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+  csm_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_source_path, SHADER_CONSTANTS)
                                                 .vertex("csm.vert")
                                                 .geometry("csm.geom")
                                                 .fragment("empty.frag"));
-  temple_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+  temple_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_source_path, SHADER_CONSTANTS)
                                                    .vertex("blinn_phong.vert")
                                                    .fragment("blinn_phong.frag"));
-  skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+  skybox_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_source_path, SHADER_CONSTANTS)
                                                    .vertex("sky.vert")
                                                    .fragment("sky.frag"));
-  image_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+  image_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_source_path, SHADER_CONSTANTS)
                                                   .vertex("image_space.vert")
                                                   .fragment("image_space.frag"));
   if (config_.debug_enabled && config_.debug_render_light_positions) {
-    debug_light_positions_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(config_.shader_path)
+    debug_light_positions_shader_ = std::make_unique<ShaderProgram>(ShaderProgram::Stages(
+                                                                     config_.shader_source_path,
+                                                                     SHADER_CONSTANTS)
                                                                     .vertex("debug_lights.vert")
                                                                     .geometry("debug_lights.geom")
                                                                     .fragment("debug_lights.frag"));
@@ -102,8 +104,8 @@ void Renderer::renderSetup() {
   createSceneFramebufferAttachments();
   initializeCSMFramebuffer();
 
-  temple_model_->drawSetup(SSBO_BINDING_TEMPLE_VERTICES, TEX_BINDING_TEMPLE_ARRAY);
-  skybox_->drawSetup(SSBO_BINDING_SKY_VERTICES, TEX_BINDING_SKY_CUBE_MAP);
+  temple_model_->drawSetup(SSBOBinding::TEMPLE_VERTEX, TextureBinding::TEMPLE_ARRAY);
+  skybox_->drawSetup(SSBOBinding::SKY_VERTEX, TextureBinding::SKY_CUBE_MAP);
 
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
                        GL_DEBUG_TYPE_OTHER,
@@ -190,7 +192,7 @@ void Renderer::initializeMatrixBuffer() {
                        sizeof(glm::mat4),
                        sizeof(glm::mat4),
                        glm::value_ptr(camera_->getViewMatrix()));
-  glBindBufferBase(GL_UNIFORM_BUFFER, UBO_BINDING_MATRIX, objects_.matrix_buffer.id);
+  glBindBufferBase(GL_UNIFORM_BUFFER, UBOBinding::MATRIX, objects_.matrix_buffer.id);
 }
 
 void Renderer::initializeLightDataBuffer() {
@@ -236,7 +238,7 @@ void Renderer::initializeLightDataBuffer() {
                                              + sizeof(glm::vec4)),
                        static_cast<GLsizeiptr>(std::ssize(point_lights) * sizeof(Light)),
                        point_lights.data());
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBO_BINDING_LIGHT_DATA, objects_.light_data_buffer.id);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOBinding::LIGHT_DATA, objects_.light_data_buffer.id);
 }
 
 void Renderer::createSceneFramebufferAttachments() {
@@ -274,8 +276,8 @@ void Renderer::createSceneFramebufferAttachments() {
 
   checkFramebufferErrors(objects_.scene_fbo);
 
-  glBindTextureUnit(TEX_BINDING_SCENE_TEMPLE, objects_.scene_fbo_color[SCENE_FBO_COLOR_INDEX_TEMPLE]->id);
-  glBindTextureUnit(TEX_BINDING_SCENE_SKY, objects_.scene_fbo_color[SCENE_FBO_COLOR_INDEX_SKY]->id);
+  glBindTextureUnit(TextureBinding::SCENE_TEMPLE, objects_.scene_fbo_color[SCENE_FBO_COLOR_INDEX_TEMPLE]->id);
+  glBindTextureUnit(TextureBinding::SCENE_SKY, objects_.scene_fbo_color[SCENE_FBO_COLOR_INDEX_SKY]->id);
 }
 
 void Renderer::initializeCSMFramebuffer() {
@@ -298,7 +300,7 @@ void Renderer::initializeCSMFramebuffer() {
   glNamedFramebufferTexture(objects_.csm_fbo.id, GL_DEPTH_ATTACHMENT, objects_.csm_fbo_depth.id, 0);
   checkFramebufferErrors(objects_.csm_fbo);
 
-  glBindTextureUnit(TEX_BINDING_CSM_ARRAY, objects_.csm_fbo_depth.id);
+  glBindTextureUnit(TextureBinding::SUN_CSM_ARRAY, objects_.csm_fbo_depth.id);
 }
 
 void Renderer::renderSunlightCSM() const {

@@ -8,7 +8,7 @@ struct Light {
     vec4 color;
     float intensity;
 };
-layout (binding = 2, std430) readonly buffer light_data_ssbo {
+layout (binding = SSBO_LIGHT_DATA, std430) readonly buffer light_data_ssbo {
     CameraParameters camera;
     Light sunlight;
     uint num_point_lights;
