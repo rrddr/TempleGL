@@ -10,7 +10,7 @@
 #include <memory>
 
 class Skybox {
- public:
+public:
   /**
    * Creates required OpenGL resources.
    *
@@ -30,12 +30,12 @@ class Skybox {
    *                x1, y1, z1, x2, y2, z2... order). Should define a samplerCube uniform. Bindings should equal the
    *                ones passed to drawSetup().
    */
-  static inline void draw(const std::unique_ptr<ShaderProgram>& shader) {
+  void draw(const std::unique_ptr<ShaderProgram>& shader) {
     shader->use();
     glDrawArrays(GL_TRIANGLES, 0, 36);
   }
 
- private:
+private:
   wrap::Texture cube_map_ {};
   wrap::Buffer vertex_buffer_ {};
   static constexpr GLsizei FACE_SIZE {512};

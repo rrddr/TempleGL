@@ -1,5 +1,7 @@
 //FRAGMENT_SHADER
 #version 460 core
+#include "ssbo_light_data.glsl"
+
 in VS_OUT {
     flat int material_index;
     smooth vec2 uv;
@@ -9,24 +11,8 @@ in VS_OUT {
     flat mat3 TBN;
 } fs_in;
 
-struct CameraParameters {
-    vec4 world_space_position;
-    float csm_partition_depths[3];
-};
-struct Light {
-    vec4 source;
-    vec4 color;
-    float intensity;
-};
-layout (binding = 2, std430) readonly buffer light_ssbo {
-    CameraParameters camera;
-    Light sunlight;
-    uint num_point_lights;
-    Light point_lights[];
-};
-
-layout (binding = 0) uniform sampler2DArray model_texture_array;
-layout (binding = 4) uniform sampler2DArray sunlight_csm_array;
+layout (binding = SAMPLER_ARRAY_TEMPLE) uniform sampler2DArray model_texture_array;
+layout (binding = SAMPLER_ARRAY_SHADOW_SUN) uniform sampler2DArrayShadow sunlight_csm_array;
 
 const float SPECULAR_EXPONENT = 16.0;
 const float POINT_LIGHT_MAX_R = 7.0;
@@ -45,7 +31,7 @@ void main() {
 
     vec3 diffuse_color = pow(raw_diffuse, vec3(2.2));
     float specular_factor = 1.0 - pow(1.0 - raw_specular, 2.0);
-    vec3 N = fs_in.TBN * normalize(raw_normal * 2.0 - 1.0);
+    vec3 N = normalize(fs_in.TBN * (raw_normal * 2.0 - 1.0));
     vec3 V = normalize(camera.world_space_position.xyz - fs_in.world_space_position.xyz);
 
     vec3 final_color = AMBIENT_LIGHT * diffuse_color;
@@ -77,18 +63,7 @@ float calculateShadow() {
     vec3 remapped_position =
         (fs_in.sunlight_space_position[layer].xyz / fs_in.sunlight_space_position[layer].w) * 0.5 + 0.5;
     float bias = (layer == 0) ? 0.0001 : 0.0005;
-
-    // sample shadow map in 3x3 square around uv
-    float shadow = 0.0;
-    vec2 texel_size = 1.0 / vec2(textureSize(sunlight_csm_array, 0));
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            float sample_depth = texture(sunlight_csm_array,
-                                         vec3(remapped_position.xy + vec2(x, y) * texel_size, layer)).r;
-            shadow += remapped_position.z - bias > sample_depth ? 1.0 : 0.0;
-        }
-    }
-    return 1.0 - shadow / 9.0;
+    return texture(sunlight_csm_array, vec4(remapped_position.xy, layer, remapped_position.z - bias));
 }
 
 vec3 calculateBlinnPhong(vec3 L, vec3 N, vec3 V, vec3 diffuse_color, vec3 light_color, float specular_factor) {

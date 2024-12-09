@@ -23,14 +23,15 @@ struct RendererConfig : MinimalInitializerConfig {
   float camera_fov;
   float camera_near_plane;
   float camera_far_plane;
-  std::string model_path;
-  std::string shader_path;
+  std::string model_source_path;
+  std::string shader_source_path;
+  bool debug_render_light_positions;
 };
 
 /**
  * Implements the non-boilerplate methods declared by the abstract Initializer class.
  */
-class Renderer : public Initializer<RendererConfig> {
+class Renderer final : public Initializer<RendererConfig> {
   struct State {
     bool first_time_receiving_mouse_input;
     float mouse_x;
@@ -60,6 +61,7 @@ class Renderer : public Initializer<RendererConfig> {
   std::unique_ptr<ShaderProgram> temple_shader_;
   std::unique_ptr<ShaderProgram> skybox_shader_;
   std::unique_ptr<ShaderProgram> image_shader_;
+  std::unique_ptr<ShaderProgram> debug_light_positions_shader_;
 
   /// Main program stages
   void loadConfigYaml() override;
@@ -74,7 +76,7 @@ class Renderer : public Initializer<RendererConfig> {
   void initializeLightDataBuffer();
   void createSceneFramebufferAttachments(); // may be called multiple times
   void initializeCSMFramebuffer();
-  void renderSunlightCSM();
+  void renderSunlightCSM() const;
 
   /// Callbacks
   void framebufferSizeCallback(int width, int height) override;
@@ -83,7 +85,7 @@ class Renderer : public Initializer<RendererConfig> {
 
   /// Helper methods
   [[nodiscard]] glm::mat4 getSunlightMatrixForCascade(float near_plane, float far_plane) const;
-  static std::vector<glm::vec4> getFrustumCorners(const glm::mat4& projection, const glm::mat4& view);
+  [[nodiscard]] static std::vector<glm::vec4> getFrustumCorners(const glm::mat4& projection, const glm::mat4& view);
   static void checkFramebufferErrors(const wrap::Framebuffer& framebuffer);
 
   /// Hardcoded shader parameters
@@ -91,14 +93,14 @@ class Renderer : public Initializer<RendererConfig> {
     glm::vec4 source;
     glm::vec4 color;
     float intensity;
-    float padding[3];   // padding to conform with std430 storage layout rules
+    float padding[3]; // padding to conform with std430 storage layout rules
   };
   static constexpr Light SUNLIGHT {{-0.4f, 0.9f, -1.0f, 0.0f},
                                    {1.0f, 0.7f, 0.4f, 1.0f},
                                    3.0f};
   static constexpr Light DEFAULT_POINT_LIGHT {{0.0f, 0.0f, 0.0f, 1.0f},
                                               {0.6f, 1.0f, 0.9f, 1.0f},
-                                              0.0125f};
+                                              0.05f};
   static constexpr GLsizei CSM_TEX_SIZE {16192};
   static constexpr size_t CSM_NUM_CASCADES {3};
 
@@ -106,16 +108,19 @@ class Renderer : public Initializer<RendererConfig> {
   static constexpr size_t SCENE_FBO_COLOR_INDEX_TEMPLE {0};
   static constexpr size_t SCENE_FBO_COLOR_INDEX_SKY {1};
 
-  static constexpr GLuint TEX_BINDING_TEMPLE_ARRAY {0};
-  static constexpr GLuint TEX_BINDING_SKY_CUBE_MAP {1};
-  static constexpr GLuint TEX_BINDING_SCENE_TEMPLE {2};
-  static constexpr GLuint TEX_BINDING_SCENE_SKY {3};
-  static constexpr GLuint TEX_BINDING_CSM_ARRAY {4};
-
-  static constexpr GLuint SSBO_BINDING_TEMPLE_VERTICES {0};
-  static constexpr GLuint SSBO_BINDING_SKY_VERTICES {1};
-  static constexpr GLuint SSBO_BINDING_LIGHT_DATA {2};
-
-  static constexpr GLuint UBO_BINDING_MATRIX {0};
+  enum TextureBinding { TEMPLE_ARRAY, SUN_CSM_ARRAY, SKY_CUBE_MAP, SCENE_TEMPLE, SCENE_SKY };
+  enum SSBOBinding { TEMPLE_VERTEX, SKY_VERTEX, LIGHT_DATA };
+  enum UBOBinding { MATRIX };
+  inline static const std::vector<std::pair<std::string, int>> SHADER_CONSTANTS {{
+    std::make_pair("SAMPLER_ARRAY_TEMPLE", TEMPLE_ARRAY),
+    std::make_pair("SAMPLER_ARRAY_SHADOW_SUN", SUN_CSM_ARRAY),
+    std::make_pair("SAMPLER_CUBE_SKY", SKY_CUBE_MAP),
+    std::make_pair("SAMPLER_SCENE_MODEL", SCENE_TEMPLE),
+    std::make_pair("SAMPLER_SCENE_SKY", SCENE_SKY),
+    std::make_pair("SSBO_TEMPLE_VERTEX", TEMPLE_VERTEX),
+    std::make_pair("SSBO_SKY_VERTEX", SKY_VERTEX),
+    std::make_pair("SSBO_LIGHT_DATA", LIGHT_DATA),
+    std::make_pair("UBO_MATRIX", MATRIX),
+  }};
 };
 #endif //TEMPLEGL_SRC_RENDERER_H_

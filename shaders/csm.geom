@@ -1,13 +1,9 @@
 //GEOMETRY_SHADER
 #version 460 core
+#include "ubo_matrices.glsl"
+
 layout(triangles, invocations = 3) in;
 layout(triangle_strip, max_vertices = 3) out;
-
-layout (binding = 0, std140) uniform matrix_ubo {
-    mat4 projection;
-    mat4 view;
-    mat4 sunlight_transform[3];
-};
 
 void main() {
     for (int i = 0; i < 3; ++i) {
