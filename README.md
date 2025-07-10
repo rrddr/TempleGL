@@ -23,3 +23,5 @@ Point lights are also implemented in the most naive way, as I was working on imp
 (I have implementations for both of these things in separate projects, but those are based on tutorials, so I did not want to copy-paste them).
 - HDR rendering, with tone-mapping (and gamma-correction) in a separate screen-space pass.
 - Standard WASD + Mouse camera controls (+ Shift/Space to go down/up, and scroll-wheel to adjust move speed).
+
+<img width="1921" alt="CSM-screenshot" src="https://github.com/rrddr/TempleGL/blob/main/CSMexample1.png" title="Close and distant shadows of similar quality.">
