@@ -86,8 +86,7 @@ private:
   void loadLightData();
   void createTextureArray(aiMaterial** materials, unsigned int num_materials);
   void createBuffers(aiMesh** meshes, unsigned int num_meshes);
-  template <typename T>
-  static void createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector);
+  static void createBufferFromVector(wrap::Buffer& buffer, const std::vector<auto>& vector);
   void checkAssimpSceneErrors(const aiScene* scene, const std::string& path) const;
 
   static constexpr GLsizei TEX_SIZE {128};
