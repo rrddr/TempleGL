@@ -88,7 +88,7 @@ void Initializer<T>::init() {
     static_cast<Initializer*>(glfwGetWindowUserPointer(w))->cursorPosCallback(static_cast<float>(x),
                                                                               static_cast<float>(y));
   });
-  glfwSetScrollCallback(window_, [](GLFWwindow* w, double x, double y) {
+  glfwSetScrollCallback(window_, [](GLFWwindow* w, double, double y) {
     static_cast<Initializer*>(glfwGetWindowUserPointer(w))->scrollCallback(static_cast<float>(y));
   });
 

@@ -142,9 +142,9 @@ void Model::createBuffers(aiMesh** meshes, const unsigned int num_meshes) {
     }
   }
   num_draw_commands_ = static_cast<GLsizei>(std::ssize(draw_commands));
-  createBufferFromVector<Vertex>(vertex_buffer_, vertices);
-  createBufferFromVector<GLuint>(index_buffer_, indices);
-  createBufferFromVector<DrawElementsIndirectCommand>(draw_command_buffer_, draw_commands);
+  createBufferFromVector(vertex_buffer_, vertices);
+  createBufferFromVector(index_buffer_, indices);
+  createBufferFromVector(draw_command_buffer_, draw_commands);
   glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
                        GL_DEBUG_TYPE_OTHER,
                        0,
@@ -153,10 +153,9 @@ void Model::createBuffers(aiMesh** meshes, const unsigned int num_meshes) {
                        "(Model::createBuffers): Completed successfully.");
 }
 
-template <typename T>
-void Model::createBufferFromVector(wrap::Buffer& buffer, const std::vector<T>& vector) {
+void Model::createBufferFromVector(wrap::Buffer& buffer, const std::vector<auto>& vector) {
   glCreateBuffers(1, &buffer.id);
-  glNamedBufferStorage(buffer.id, sizeof(T) * std::ssize(vector), vector.data(), GL_DYNAMIC_STORAGE_BIT);
+  glNamedBufferStorage(buffer.id, sizeof(decltype(*vector.begin())) * std::ssize(vector), vector.data(), GL_DYNAMIC_STORAGE_BIT);
 }
 
 void Model::checkAssimpSceneErrors(const aiScene* scene, const std::string& path) const {
